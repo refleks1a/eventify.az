@@ -11,11 +11,9 @@ from starlette import status
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 
-import database
-import models
-
 from database import sessionLocal 
 from models import User
+from schemas import UserLogIn
 
 import os
 
@@ -80,9 +78,9 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
 
 
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+async def login_for_access_token(form_data: UserLogIn,
         db: db_dependency):
-    
+    print(1)
     user = authenticate_user(form_data.username, form_data.password, db)
 
     if not user:
@@ -133,7 +131,7 @@ async def get_current_user(token: Annotated[str, Depends (oauth2_bearer)],
         return user
     
     except JWTError:
-        raise HTTPException(status_code=status.HTTP._401_UNAUTHORIZED,
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Could not validate user. ')
 
 

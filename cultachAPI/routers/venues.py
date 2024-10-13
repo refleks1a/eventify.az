@@ -39,6 +39,7 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_venue(venue: VenueCreate, db: db_dependency):
+    print(1)
     db_venue = Venue(**venue.model_dump())
 
     db.add(db_venue)
@@ -67,7 +68,7 @@ async def get_venue(venue_id: int, db: db_dependency):
 @router.post("/like", status_code=status.HTTP_201_CREATED)
 async def create_venue_like(venue_like: VenueLikeCreate, db: db_dependency,
         current_user: UserInfo = Depends(get_current_user)):
-    
+
     check_db_venue_like = db.query(VenueLike).filter(VenueLike.venue == venue_like.venue,
         VenueLike.owner_id == current_user.id).first()
 

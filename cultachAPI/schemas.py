@@ -17,6 +17,10 @@ class UserInfo(UserBase):
     id: int  
     is_organizer: bool  
 
+class UserLogIn(BaseModel):
+    username: str
+    password: str    
+
 # Venue
 
 # Venue: VenueComment

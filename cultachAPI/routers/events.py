@@ -52,6 +52,18 @@ async def get_all_events(db: db_dependency):
     
     return events
 
+@router.get("/favorites", status_code=status.HTTP_200_OK)
+async def get_favorite_events(db: db_dependency, 
+        current_user: UserInfo = Depends(get_current_user)):
+    likes = db.query(EventLike).filter(EventLike.owner_id == current_user.id).all()
+    events = []
+
+    for like in likes:
+        event = db.query(Event).filter(Event.id == like.event).first()
+        events.append(event)
+
+    return events
+
 
 @router.get("/{event_id}", status_code=status.HTTP_200_OK)
 async def get_event(event_id: int, db: db_dependency):
@@ -67,7 +79,7 @@ async def get_event(event_id: int, db: db_dependency):
 @router.post("/like", status_code=status.HTTP_201_CREATED)
 async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
         current_user: UserInfo = Depends(get_current_user)):
-    
+    print(1)
     check_db_event_like = db.query(EventLike).filter(EventLike.event == event_like.event,
         EventLike.owner_id == current_user.id).first()
 
@@ -77,11 +89,13 @@ async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
 
         db_event_like = EventLike(**event_like.model_dump(), owner_id=current_user.id)
 
-    db.add(db_event_like)
-    db.commit() 
-    db.refresh(db_event_like)
+        db.add(db_event_like)
+        db.commit() 
+        db.refresh(db_event_like)
 
-    return db_event_like
+        return db_event_like
+    
+    return Response(status_code=status.HTTP_204_NO_CONTENT) 
 
 
 @router.delete("/like/delete", status_code=status.HTTP_204_NO_CONTENT)
