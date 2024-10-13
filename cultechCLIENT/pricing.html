@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <title>Pricing</title>
+</head>
+<body>
+    <div class="Main">
+        <div class="homepage">
+            <nav class="navbar">
+                <div class="menu-left">
+                    <div class="logo">
+                        <a href="/cultechCLIENT"><img src="./images/logo.png" style="width: 110px; " alt=""></a>                    </div>
+                </div>
+                <div class="search-container">
+                    <form action="/search">
+                        <input type="text" placeholder="Search..." name="search">
+                        <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    </form>
+                </div>
+
+                <div class="menu-right">
+                    <a href="#"><i class="fa-regular fa-comment-dots"></i>
+                        <p>Chat</p>
+                    </a>
+                    <a href="/cultechCLIENT/pricing.html"><i class="fa-regular fa-calendar-plus"></i>Subscribe</a>
+                    <a href="#"><i class="fa-regular fa-user"></i>Account</a>
+                    <div class="hamburger" onclick="toggleMobileMenu()">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div class="custom-pricing-container">
+            <div class="custom-pricing-card">
+                <div class="custom-card-header">
+                    <h4>Free</h4>
+                </div>
+                <div class="custom-card-body">
+                    <h1>$0<small>/mo</small></h1>
+                    <ul class="custom-list">
+                        <li>10 users included</li>
+                        <li>2 GB of storage</li>
+                        <li>Email support</li>
+                        <li>Help center access</li>
+                    </ul>
+                    <button class="custom-button" style="position: relative;">Sign up for free</button>
+                </div>
+            </div>
+            <div class="custom-pricing-card">
+                <div class="custom-card-header">
+                    <h4>Pro</h4>
+                </div>
+                <div class="custom-card-body">
+                    <h1>$15<small>/mo</small></h1>
+                    <ul class="custom-list">
+                        <li>20 users included</li>
+                        <li>10 GB of storage</li>
+                        <li>Priority email support</li>
+                        <li>Help center access</li>
+                    </ul>
+                    <button class="custom-button" style="position: relative;">Sign up for free</button>
+                </div>
+            </div>
+            <div class="custom-pricing-card">
+                <div class="custom-card-header">
+                    <h4>VIP</h4>
+                </div>
+                <div class="custom-card-body">
+                    <h1>$29<small>/mo</small></h1>
+                    <ul class="custom-list">
+                        <li>30 users included</li>
+                        <li>15 GB of storage</li>
+                        <li>Phone and email support</li>
+                        <li>Help center access</li>
+                    </ul>
+                    <button class="custom-button" style="position: relative;">Sign up for free</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="mobileMenu" class="mobile-menu">
+            <a href="#" class="closebtn" onclick="toggleMobileMenu()">&times;</a>
+            <a href="#">Home</a>
+            <a href="#">Services</a>
+            <a href="#">About</a>
+            <a href="#" class="cta-button">Contact Us</a>
+        </div>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section about">
+                    <h3>About Us</h3>
+                    <p>We are a company that values excellence <br> in service and innovation. Contact us for more
+                        information!</p>
+                </div>
+                <div class="footer-section links">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="#">Home</a></li>
+                        <li><a href="#">Services</a></li>
+                        <li><a href="#">Contact</a></li>
+                        <li><a href="#">About Us</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section contact-form">
+                    <h3>Contact Us</h3>
+                    <form action="submit_form.php" method="post">
+                        <input type="email" name="email" placeholder="Your Email" required>
+                        <textarea name="message" placeholder="Your Message" required></textarea>
+                        <button type="submit">Send</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                &copy; 2024 CulPass | All rights reserved
+            </div>
+        </footer>
+
+    </div>
+
+    <script src="./script.js"></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTbx_7I-5Iq_bINF4e48cFLs3fEhDzMzY&libraries=places&callback=initMap"></script>
+    <script src="https://kit.fontawesome.com/dd876d8f0f.js" crossorigin="anonymous"></script>
+
+</body>
+</html>
