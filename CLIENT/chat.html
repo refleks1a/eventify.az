@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Chat UI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="menu-left">
+            <div class="logo">
+                <a href="/cultechCLIENT"><img src="./images/logo.png" style="width: 110px; " alt=""></a>
+            </div>
+        </div>
+        <div class="search-container">
+            <form action="/search">
+                <input type="text" placeholder="Search..." name="search">
+                <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </form>
+        </div>
+
+        <div class="menu-right">
+            <a href="./chat.html"><i class="fa-regular fa-comment-dots"></i>
+                <p>Chat</p>
+            </a>
+            <a href="./pricing.html"><i class="fa-regular fa-calendar-plus"></i>Subscribe</a>
+            <a href="#"><i class="fa-regular fa-user"></i>Account</a>
+            <div class="hamburger" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+    <div class="chat-container">
+        <!-- Group List Sidebar -->
+        <div class="sidebar">
+            <h3>Available Groups</h3>
+
+            <!-- Available Group 1 -->
+            <div class="group" data-group="group1">
+                <h4>Art Exhibition</h4>
+                <p>Azerbaijan National Museum of Art.</p>
+                <span class="members">7/10 members</span>
+            </div>
+
+            <!-- Available Group 2 -->
+            <div class="group" data-group="group2">
+                <h4>Carpet Exhibition</h4>
+                <p>Azerbaijan National Carpet Museum.</p>
+                <span class="members">3/6 members</span>
+            </div>
+
+            <!-- Available Group 3 -->
+            <div class="group" data-group="group3">
+                <h4>Game Summit</h4>
+                <p>Baku Sport Palace.</p>
+                <span class="members">3/4 members</span>
+            </div>
+
+            <!-- Available Group 4 -->
+            <div class="group" data-group="group4">
+                <h4>Music Festival</h4>
+                <p>Haydar Aliyev Palace</p>
+                <span class="members">8/10 members</span>
+            </div>
+
+            <!-- Fully Occupied Group 5 -->
+            <div class="group full" data-group="group5">
+                <h4>Grape and Wine festival (Full)</h4>
+                <p>Shamakhi Meysari Wine Factory.</p>
+                <span class="members">25 members (Full)</span>
+            </div>
+
+            <!-- Fully Occupied Group 6 -->
+            <div class="group full" data-group="group6">
+                <h4>Jazz Festival (Full)</h4>
+                <p>Maiden Tower.</p>
+                <span class="members">30 members (Full)</span>
+            </div>
+
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <h4>Select a Group to Join</h4>
+                <span id="group-status">You are not in a group</span>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <!-- Chat messages will appear here when a group is joined -->
+            </div>
+            <div class="chat-input">
+                <input type="text" id="message-input" placeholder="Write your message..." disabled>
+                <button id="send-message" disabled>Send</button>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <script>
+
+function showDescription(place) {
+    const venue = markedVenues.find(v => v.id === place.place_id);
+    if (venue) {
+        document.getElementById("modal-image-1").src = venue.image1 || "images/hq720.jpg";
+        document.getElementById("modal-image-2").src = venue.image2 || "images/hq720.jpg";
+        document.getElementById("modal-image-3").src = venue.image3 || "images/hq720.jpg";
+
+        document.getElementById("modal-venue-name").innerText = venue.name || "Unknown Venue";
+        document.getElementById("modal-venue-description").innerText = venue.description || "On May 16, 1994, by order of the Minister of Culture of Azerbaijan, the Crazy Meeting was established as a Pantomime Theater-Studio and operated under the Azerbaijan State Youth Theater. Experience the unique art of silent acting with engaging performances..";
+        document.getElementById("modal-venue-likes-comments").innerText = `${venue.num_likes || 3} likes and ${venue.num_comments || 1} comments`;
+
+        document.getElementById("modal-image-1").style = "width: 180px; height: 130px";
+        document.getElementById("modal-image-2").style = "width: 180px; height: 130px";
+        document.getElementById("modal-image-3").style = "width: 180px; height: 130px;";
+
+        document.getElementById("detailsModal").style.display = "flex";
+    } else {
+        console.error("Venue not found in markedVenues:", place);
+    }
+}
+
+const groups = document.querySelectorAll('.group');
+const chatMessages = document.getElementById('chat-messages');
+const groupStatus = document.getElementById('group-status');
+const messageInput = document.getElementById('message-input');
+const sendMessage = document.getElementById('send-message');
+
+// Her bir grup için tıklama olayını dinleyelim
+groups.forEach(group => {
+    group.addEventListener('click', () => {
+        // Eğer grup doluysa, mesaj yazmayı ve gönderme butonunu devre dışı bırak
+        if (group.classList.contains('full')) {
+            groupStatus.innerText = "This group is full. You cannot send messages.";
+            messageInput.disabled = true;
+            sendMessage.disabled = true;
+            return;
+        }
+
+        // Grup dolu değilse mesaj alanını aktif hale getir
+        const groupName = group.querySelector('h4').innerText;
+        groupStatus.innerText = `You are in the ${groupName}`;
+        chatMessages.innerHTML = ''; // Eski mesajları temizle
+        messageInput.disabled = false;
+        sendMessage.disabled = false;
+
+        // Örnek: Hoşgeldin mesajı ekleyelim
+        const welcomeMessage = document.createElement('div');
+        welcomeMessage.classList.add('message', 'received');
+        welcomeMessage.innerHTML = `<p>Welcome to ${groupName}! Start chatting now.</p>`;
+        chatMessages.appendChild(welcomeMessage);
+    });
+});
+
+sendMessage.addEventListener('click', () => {
+    const messageText = messageInput.value.trim();
+
+    if (messageText !== '') {
+        const newMessage = document.createElement('div');
+        newMessage.classList.add('message', 'sent');
+        newMessage.innerHTML = `<p>${messageText}</p><span class="time">${new Date().toLocaleTimeString()}</span>`;
+
+        chatMessages.appendChild(newMessage);
+        messageInput.value = '';
+        chatMessages.scrollTop = chatMessages.scrollHeight; 
+    }
+});
+
+    </script>   
+    <script src="script.js"></script> 
+</body>
+</html>
