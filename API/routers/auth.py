@@ -80,7 +80,6 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: UserLogIn,
         db: db_dependency):
-    print(1)
     user = authenticate_user(form_data.username, form_data.password, db)
 
     if not user:
@@ -118,16 +117,15 @@ async def get_current_user(token: Annotated[str, Depends (oauth2_bearer)],
                            db: db_dependency):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-
+        print(1)
         username: str = payload.get ('sub')
         user_id: int = payload.get('id')
-        
+
         if username is None or user_id is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Could not validate user.')
         
         user = db.query(User).filter(User.id == user_id).first()
-        
         return user
     
     except JWTError:

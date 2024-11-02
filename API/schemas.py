@@ -1,9 +1,6 @@
 from pydantic import BaseModel
-from sqlalchemy import DateTime, Enum
 
 from datetime import datetime, time
-
-from fastapi_storages.integrations.sqlalchemy import FileType
 
 
 # User

@@ -39,7 +39,17 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_venue(venue: VenueCreate, db: db_dependency):
-    print(1)
+    # Check lat/lng validity
+    # if not re.match(latitude_regex, event.lat) or not re.match(longitude_regex, event.lng):
+    #     return Response(status_code=status.HTTP_400_BAD_REQUEST, 
+    #         content="Unprocessable latitude/longitude entry") 
+    
+    # # Check location validity
+    # country, city = get_country_from_coordinates(event.lat, event.lng)
+    # if country != "Azerbaijan":
+    #     return Response(status_code=status.HTTP_400_BAD_REQUEST,
+    #         content=f"Event location is outside of Azerbaijan")
+
     db_venue = Venue(**venue.model_dump())
 
     db.add(db_venue)

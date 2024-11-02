@@ -1,5 +1,9 @@
 from typing import Annotated 
 
+import re
+
+from .utils import event_types, is_past_date, time_regex
+
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.sql.expression import text
 
@@ -10,7 +14,7 @@ from database import sessionLocal
 
 from dotenv import load_dotenv
 
-from models import Event, EventComment, EventLike
+from models import Event, EventComment, EventLike, Venue, User
 from schemas import (UserInfo, EventLikeCreate, EventCreate,
         EventCommentCreate, EventCommentInfo, EventCommentBase, EventCommentDelete)
 
@@ -39,10 +43,40 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_event(event: EventCreate, db: db_dependency):
-    db_event = Event(**event.model_dump())
+    
+    # Check venue_id validity
+    if not db.query(Venue).filter(Venue.id == event.venue_id).all():
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
+            content="Invalid venue id")
+    
+    # Check organizer_id validity
+    if not db.query(User).filter(User.id == event.organizer_id).all():
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
+            content="Invalid organizer id")
+    
+    # Check event_type validity
+    if event.event_type not in event_types:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Invalid event type")
+    
+    # Check date validity
+    if is_past_date(str(event.date)):
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Event date cannot be in the past")
 
+    # Check star/finish time validity
+    if (event.start > event.finish) or (not bool(re.match(time_regex, event.start))) or (
+        not bool(re.match(time_regex, event.finish))):
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
+            content="Invalid start/finish time of event")
+
+    # Check poster_image_link validity
+    
+    db_event = Event(**event.model_dump())
     db.add(db_event)
     db.commit() 
+    
+    return Response(status_code=status.HTTP_201_CREATED)
 
 
 @router.get("/all", status_code=status.HTTP_200_OK)
@@ -93,7 +127,7 @@ async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
         db.commit() 
         db.refresh(db_event_like)
 
-        return db_event_like
+        return Response(status_code=status.HTTP_201_CREATED) 
     
     return Response(status_code=status.HTTP_204_NO_CONTENT) 
 
@@ -166,5 +200,3 @@ async def delete_event_comment(event_comment: EventCommentDelete, db: db_depende
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-

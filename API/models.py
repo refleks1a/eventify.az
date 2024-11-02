@@ -36,9 +36,6 @@ class Post(Base):
 
 
 
-
-
-
 class Venue(Base):
     __tablename__ = "venues"
     
