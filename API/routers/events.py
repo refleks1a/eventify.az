@@ -2,7 +2,7 @@ from typing import Annotated
 
 import re
 
-from .utils import event_types, is_past_date, time_regex
+from .utils import event_types, is_past_date, time_regex, link_regex
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.sql.expression import text
@@ -60,17 +60,20 @@ async def create_event(event: EventCreate, db: db_dependency):
             content="Invalid event type")
     
     # Check date validity
-    if is_past_date(str(event.date)):
+    if is_past_date(str(event.date)[:19]):
         return Response(status_code=status.HTTP_400_BAD_REQUEST,
             content="Event date cannot be in the past")
 
     # Check star/finish time validity
-    if (event.start > event.finish) or (not bool(re.match(time_regex, event.start))) or (
-        not bool(re.match(time_regex, event.finish))):
+    if (event.start > event.finish) or (not bool(re.match(time_regex, str(event.start)[:8]))) or (
+        not bool(re.match(time_regex, str(event.finish)[:8]))):
         return Response(status_code=status.HTTP_400_BAD_REQUEST, 
             content="Invalid start/finish time of event")
 
     # Check poster_image_link validity
+    if not bool(re.match(link_regex, str(event.poster_image_link))):
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
+            content="Invalid link")
     
     db_event = Event(**event.model_dump())
     db.add(db_event)
