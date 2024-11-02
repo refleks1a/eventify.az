@@ -97,17 +97,21 @@ async def get_favorite_events(db: db_dependency,
 
     for like in likes:
         event = db.query(Event).filter(Event.id == like.event).first()
-        events.append(event)
+        # If event is not Null append it to events list
+        if event:
+            events.append(event)
 
     return events
 
 
 @router.get("/{event_id}", status_code=status.HTTP_200_OK)
 async def get_event(event_id: int, db: db_dependency):
-    event = db.query(Event).filter(Event.id == event_id).first()
 
+    # Check event id validity
+    event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        return Response(status_code=status.HTTP_404_NOT_FOUND,
+            content="Invalid event id")
     
     return event
 
@@ -116,39 +120,53 @@ async def get_event(event_id: int, db: db_dependency):
 @router.post("/like", status_code=status.HTTP_201_CREATED)
 async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
         current_user: UserInfo = Depends(get_current_user)):
-    print(1)
+    
+    # Check event id validity
+    if not db.query(Event).filter(Event.id == event_like.event).all():
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
+            content="Invalid event id")
+
+    # Check whether like exists or not
     check_db_event_like = db.query(EventLike).filter(EventLike.event == event_like.event,
         EventLike.owner_id == current_user.id).first()
-
-    if not check_db_event_like:
-        event = db.query(Event).filter(Event.id == event_like.event).first()
-        event.num_likes += 1
-
-        db_event_like = EventLike(**event_like.model_dump(), owner_id=current_user.id)
-
-        db.add(db_event_like)
-        db.commit() 
-        db.refresh(db_event_like)
-
-        return Response(status_code=status.HTTP_201_CREATED) 
+    if check_db_event_like:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Like already exists")
     
-    return Response(status_code=status.HTTP_204_NO_CONTENT) 
+    event = db.query(Event).filter(Event.id == event_like.event).first()
+    event.num_likes += 1
 
+    db_event_like = EventLike(**event_like.model_dump(), owner_id=current_user.id)
+
+    db.add(db_event_like)
+    db.commit() 
+    db.refresh(db_event_like)
+
+    return Response(status_code=status.HTTP_201_CREATED) 
+    
 
 @router.delete("/like/delete", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_event_like(event_like: EventLikeCreate, db: db_dependency,
         current_user: UserInfo = Depends(get_current_user)):
     
+    # Check event id validity
+    if not db.query(Event).filter(Event.id == event_like.event).all():
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
+            content="Invalid event id")
+
+    # Check whether like exists or not
     check_db_event_like = db.query(EventLike).filter(EventLike.event == event_like.event,
         EventLike.owner_id == current_user.id)
-    
-    if check_db_event_like:
-        event = db.query(Event).filter(Event.id == event_like.event).first()
-        check_db_event_like.delete(synchronize_session=False)
-        event.num_likes -= 1 
+    if not check_db_event_like:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Like doesn't exist")
 
-        if event.num_likes < 0:
-            event.num_likes = 0
+    event = db.query(Event).filter(Event.id == event_like.event).first()
+    check_db_event_like.delete(synchronize_session=False)
+    event.num_likes -= 1 
+
+    if event.num_likes < 0:
+        event.num_likes = 0
 
     db.commit()
 
@@ -160,6 +178,11 @@ async def delete_event_like(event_like: EventLikeCreate, db: db_dependency,
 @router.post("/comment", status_code=status.HTTP_201_CREATED, response_model= EventCommentInfo)
 def create_event_comment(event_comment: EventCommentCreate, db: Session = Depends(get_db),
         current_user: UserInfo = Depends(get_current_user)):
+
+    # Check event id validity
+    if not db.query(Event).filter(Event.id == event_comment.event).all():
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
+            content="Invalid event id")
 
     new_comment = EventComment(**event_comment.model_dump(), owner_id=current_user.id)
     
@@ -184,8 +207,8 @@ def get_comment(comment_id: int, db: Session = Depends(get_db)):
     comment = db.query(EventComment).filter(EventComment.id == comment_id).first()
 
     if not comment:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"Comment with id: {comment_id} was not found")
+        return Response(status_code=status.HTTP_404_NOT_FOUND,
+                content=f"Comment with id: {comment_id} was not found")
 
     return comment
 
@@ -193,13 +216,15 @@ def get_comment(comment_id: int, db: Session = Depends(get_db)):
 @router.delete("/comment/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_event_comment(event_comment: EventCommentDelete, db: db_dependency,
         current_user: UserInfo = Depends(get_current_user)):
-
+    
+    # Check whether comment exists or not
     check_db_event_comment = db.query(EventComment).filter(EventComment.id == event_comment.id,
         EventComment.owner_id == current_user.id)
+    if not check_db_event_comment:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Comment doesn't exist")
     
-    if check_db_event_comment:
-        check_db_event_comment.delete(synchronize_session=False)
-
+    check_db_event_comment.delete(synchronize_session=False)
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
