@@ -4,7 +4,7 @@ import re
 
 from .utils import event_types, is_past_date, time_regex, link_regex
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.sql.expression import text
 
 from sqlalchemy.orm import Session
@@ -15,8 +15,8 @@ from database import sessionLocal
 from dotenv import load_dotenv
 
 from models import Event, EventComment, EventLike, Venue, User
-from schemas import (UserInfo, EventLikeCreate, EventCreate,
-        EventCommentCreate, EventCommentInfo, EventCommentBase, EventCommentDelete)
+from schemas import (EventLikeCreate, EventCreate,
+        EventCommentCreate, EventCommentInfo, EventCommentDelete)
 
 from .auth import get_current_user
 
@@ -37,13 +37,20 @@ def get_db():
         db.close() 
 
 db_dependency = Annotated[Session, Depends(get_db)]
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 
 # Events
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_event(event: EventCreate, db: db_dependency):
+async def create_event(event: EventCreate, db: db_dependency,
+        current_user: user_dependency):
     
+    # Check if user is organizer or not
+    if not current_user["is_organizer"]:
+        return Response(status_code=status.HTTP_403_FORBIDDEN, 
+            content="Only organizers can create events")
+
     # Check venue_id validity
     if not db.query(Venue).filter(Venue.id == event.venue_id).all():
         return Response(status_code=status.HTTP_400_BAD_REQUEST, 
@@ -90,9 +97,9 @@ async def get_all_events(db: db_dependency):
     return events
 
 @router.get("/favorites", status_code=status.HTTP_200_OK)
-async def get_favorite_events(db: db_dependency, 
-        current_user: UserInfo = Depends(get_current_user)):
-    likes = db.query(EventLike).filter(EventLike.owner_id == current_user.id).all()
+async def get_favorite_events(db: db_dependency, current_user: user_dependency):
+    
+    likes = db.query(EventLike).filter(EventLike.owner_id == current_user["id"]).all()
     events = []
 
     for like in likes:
@@ -119,7 +126,7 @@ async def get_event(event_id: int, db: db_dependency):
 
 @router.post("/like", status_code=status.HTTP_201_CREATED)
 async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
-        current_user: UserInfo = Depends(get_current_user)):
+        current_user: user_dependency):
     
     # Check event id validity
     if not db.query(Event).filter(Event.id == event_like.event).all():
@@ -128,7 +135,7 @@ async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
 
     # Check whether like exists or not
     check_db_event_like = db.query(EventLike).filter(EventLike.event == event_like.event,
-        EventLike.owner_id == current_user.id).first()
+        EventLike.owner_id == current_user["id"]).first()
     if check_db_event_like:
         return Response(status_code=status.HTTP_400_BAD_REQUEST,
             content="Like already exists")
@@ -136,7 +143,7 @@ async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
     event = db.query(Event).filter(Event.id == event_like.event).first()
     event.num_likes += 1
 
-    db_event_like = EventLike(**event_like.model_dump(), owner_id=current_user.id)
+    db_event_like = EventLike(**event_like.model_dump(), owner_id=current_user["id"])
 
     db.add(db_event_like)
     db.commit() 
@@ -147,7 +154,7 @@ async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
 
 @router.delete("/like/delete", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_event_like(event_like: EventLikeCreate, db: db_dependency,
-        current_user: UserInfo = Depends(get_current_user)):
+        current_user: user_dependency):
     
     # Check event id validity
     if not db.query(Event).filter(Event.id == event_like.event).all():
@@ -156,7 +163,7 @@ async def delete_event_like(event_like: EventLikeCreate, db: db_dependency,
 
     # Check whether like exists or not
     check_db_event_like = db.query(EventLike).filter(EventLike.event == event_like.event,
-        EventLike.owner_id == current_user.id)
+        EventLike.owner_id == current_user["id"])
     if not check_db_event_like:
         return Response(status_code=status.HTTP_400_BAD_REQUEST,
             content="Like doesn't exist")
@@ -176,15 +183,15 @@ async def delete_event_like(event_like: EventLikeCreate, db: db_dependency,
 # Comments
 
 @router.post("/comment", status_code=status.HTTP_201_CREATED, response_model= EventCommentInfo)
-def create_event_comment(event_comment: EventCommentCreate, db: Session = Depends(get_db),
-        current_user: UserInfo = Depends(get_current_user)):
+def create_event_comment(event_comment: EventCommentCreate, db: db_dependency,
+        current_user: user_dependency):
 
     # Check event id validity
     if not db.query(Event).filter(Event.id == event_comment.event).all():
         return Response(status_code=status.HTTP_400_BAD_REQUEST, 
             content="Invalid event id")
 
-    new_comment = EventComment(**event_comment.model_dump(), owner_id=current_user.id)
+    new_comment = EventComment(**event_comment.model_dump(), owner_id=current_user["id"])
     
     db.add(new_comment)
     db.commit()
@@ -194,7 +201,7 @@ def create_event_comment(event_comment: EventCommentCreate, db: Session = Depend
 
 
 @router.get("/{event_id}/comment", status_code=status.HTTP_200_OK)
-def get_event_comments(event_id: int, db: Session = Depends(get_db)):
+def get_event_comments(event_id: int, db: db_dependency):
 
     comments = db.query(EventComment).filter(EventComment.event == event_id).order_by(text("-created_at")).all()
 
@@ -202,7 +209,7 @@ def get_event_comments(event_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/comment/{comment_id}", status_code=status.HTTP_200_OK)
-def get_comment(comment_id: int, db: Session = Depends(get_db)):
+def get_comment(comment_id: int, db: db_dependency):
 
     comment = db.query(EventComment).filter(EventComment.id == comment_id).first()
 
@@ -215,11 +222,11 @@ def get_comment(comment_id: int, db: Session = Depends(get_db)):
 
 @router.delete("/comment/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_event_comment(event_comment: EventCommentDelete, db: db_dependency,
-        current_user: UserInfo = Depends(get_current_user)):
+        current_user: user_dependency):
     
     # Check whether comment exists or not
     check_db_event_comment = db.query(EventComment).filter(EventComment.id == event_comment.id,
-        EventComment.owner_id == current_user.id)
+        EventComment.owner_id == current_user["id"])
     if not check_db_event_comment:
         return Response(status_code=status.HTTP_400_BAD_REQUEST,
             content="Comment doesn't exist")

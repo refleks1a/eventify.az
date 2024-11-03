@@ -13,7 +13,7 @@ from jose import jwt, JWTError
 
 from database import sessionLocal 
 from models import User
-from schemas import UserLogIn
+from schemas import UserLogIn, CreateUserRequest, Token
 
 import os
 
@@ -35,19 +35,6 @@ bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
 
-class CreateUserRequest (BaseModel):
-    username: str
-    password: str
-    first_name: str
-    last_name: str
-    is_organizer: int
-
-
-class Token (BaseModel):
-    access_token: str
-    token_type: str
-
-
 def get_db():
     db = sessionLocal()
     
@@ -55,14 +42,14 @@ def get_db():
         yield db
     finally:
         db.close() 
-
 db_dependency = Annotated[Session, Depends(get_db)]
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_user(db: db_dependency, create_user_request: CreateUserRequest):
     
+    # Check is user with this username already exists
     user = db.query(User).filter(User.username == create_user_request.username).first()
-
     if user:
         raise HTTPException(status_code=400, detail="User with such username already exists")
     
@@ -78,10 +65,11 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
 
 
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: UserLogIn,
+async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
         db: db_dependency):
+    
+    # Check if user exists
     user = authenticate_user(form_data.username, form_data.password, db)
-
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate user.')
     
@@ -90,47 +78,50 @@ async def login_for_access_token(form_data: UserLogIn,
 
 
 def authenticate_user(username: str, password: str, db):
-    user = db.query(User).filter(User.username == username).first()
 
+    user = db.query(User).filter(User.username == username).first()
+    # Check if user with such username exists
     if not user:
         return False
+    # Check if input password matches user's actual password
     if not bcrypt_context.verify(password, user.hashed_password):
         return False
     
     return user
 
 
-def create_access_token(username: str, user_id: int, expires_delta: timedelta | None = None):
+def create_access_token(username: str, user_id: int, expires_delta: timedelta):
     encode = {"sub": username, "id": user_id}
-
-    if expires_delta:
-        expires = datetime.now(timezone.utc) + expires_delta
-    else:
-        expires = datetime.now(timezone.utc) + timedelta(minutes=20)
-    
+    expires = datetime.now(timezone.utc) + expires_delta
     encode.update({"exp": expires})
 
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 async def get_current_user(token: Annotated[str, Depends (oauth2_bearer)],
-                           db: db_dependency):
+                           db: db_dependency
+                           ):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        print(1)
         username: str = payload.get ('sub')
         user_id: int = payload.get('id')
 
+        # Check if payload is valid
         if username is None or user_id is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Could not validate user.')
         
         user = db.query(User).filter(User.id == user_id).first()
-        return user
+        return {"username": username, 
+                "id": user_id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "is_organizer": user.is_organizer
+                }
     
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Could not validate user. ')
+            detail='Could not validate user.')
 
 
 def verify_token(token: str = Depends(oauth2_bearer)):

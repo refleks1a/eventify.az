@@ -18,6 +18,18 @@ class UserLogIn(BaseModel):
     username: str
     password: str    
 
+class CreateUserRequest(BaseModel):
+    username: str
+    password: str
+    first_name: str
+    last_name: str
+    is_organizer: int
+
+class Token (BaseModel):
+    access_token: str
+    token_type: str
+
+
 # Venue
 
 # Venue: VenueComment
