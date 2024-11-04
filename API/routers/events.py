@@ -1,13 +1,15 @@
-from typing import Annotated 
+from typing import Annotated
 
 import re
 
 from .utils import event_types, is_past_date, time_regex, link_regex
 
 from fastapi import APIRouter, Depends, Response
-from sqlalchemy.sql.expression import text
 
+from sqlalchemy.sql.expression import text
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
+
 from starlette import status 
 
 from database import sessionLocal 
@@ -234,3 +236,13 @@ async def delete_event_comment(event_comment: EventCommentDelete, db: db_depende
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/search/{query}", status_code=status.HTTP_200_OK)
+async def search_events(query: str, db: db_dependency):
+
+    events = db.query(Event).filter(or_(
+            Event.title.ilike(f"%{query[:127]}%"),
+            Event.description.ilike(f"%{query[:127]}%"))
+        ).limit(10).all()
+    return events
