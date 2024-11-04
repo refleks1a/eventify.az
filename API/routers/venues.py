@@ -13,7 +13,7 @@ from database import sessionLocal
 from dotenv import load_dotenv
 
 from models import Venue, VenueComment, VenueLike
-from schemas import (UserInfo, VenueLikeCreate, VenueCreate,
+from schemas import (VenueLikeCreate, VenueCreate, VenueCommentDelete,
         VenueCommentCreate, VenueCommentInfo, VenueCommentBase)
 
 from .auth import get_current_user
@@ -155,6 +155,11 @@ async def delete_venue_like(venue_like: VenueLikeCreate, db: db_dependency,
 def create_venue_comment(venue_comment: VenueCommentCreate, db: db_dependency,
         current_user: user_dependency):
 
+    # Check venue id validity
+    if not db.query(Venue).filter(Venue.id == venue_comment.venue).all():
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
+            content="Invalid venue id")
+
     new_comment = VenueComment(**venue_comment.model_dump(), owner_id=current_user["id"])
     
     db.add(new_comment)
@@ -175,8 +180,8 @@ def get_venue_comments(venue_id: int, db: db_dependency):
 @router.get("/comment/{comment_id}", status_code=status.HTTP_200_OK)
 def get_comment(comment_id: int, db: db_dependency):
 
+    # Check if comment exists
     comment = db.query(VenueComment).filter(VenueComment.id == comment_id).first()
-
     if not comment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Comment with id: {comment_id} was not found")
@@ -185,15 +190,17 @@ def get_comment(comment_id: int, db: db_dependency):
 
 
 @router.delete("/comment/delete", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_venue_comment(venue_comment: VenueCommentBase, db: db_dependency,
+async def delete_venue_comment(venue_comment: VenueCommentDelete, db: db_dependency,
         current_user: user_dependency):
 
-    check_db_venue_comment = db.query(VenueComment).filter(VenueComment.venue == venue_comment.venue,
+    # Check if comment exists or not
+    check_db_venue_comment = db.query(VenueComment).filter(VenueComment.id == venue_comment.id,
         VenueComment.owner_id == current_user["id"])
-    
-    if check_db_venue_comment:
-        check_db_venue_comment.delete(synchronize_session=False)
+    if not check_db_venue_comment:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Comment doesn't exists")
 
+    check_db_venue_comment.delete(synchronize_session=False)
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

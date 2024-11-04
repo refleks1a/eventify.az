@@ -39,6 +39,9 @@ class VenueCommentBase(BaseModel):
 class VenueCommentCreate(VenueCommentBase):
     content: str 
 
+class VenueCommentDelete(BaseModel):
+    id: int    
+
 class VenueCommentInfo(VenueCommentBase):
     id: int
 

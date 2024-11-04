@@ -210,8 +210,8 @@ def get_event_comments(event_id: int, db: db_dependency):
 @router.get("/comment/{comment_id}", status_code=status.HTTP_200_OK)
 def get_comment(comment_id: int, db: db_dependency):
 
+    # Check if comment exists
     comment = db.query(EventComment).filter(EventComment.id == comment_id).first()
-
     if not comment:
         return Response(status_code=status.HTTP_404_NOT_FOUND,
                 content=f"Comment with id: {comment_id} was not found")
@@ -223,7 +223,7 @@ def get_comment(comment_id: int, db: db_dependency):
 async def delete_event_comment(event_comment: EventCommentDelete, db: db_dependency,
         current_user: user_dependency):
     
-    # Check whether comment exists or not
+    # Check if comment exists or not
     check_db_event_comment = db.query(EventComment).filter(EventComment.id == event_comment.id,
         EventComment.owner_id == current_user["id"])
     if not check_db_event_comment:
