@@ -98,41 +98,55 @@ async def get_venue(venue_id: int, db: db_dependency):
 async def create_venue_like(venue_like: VenueLikeCreate, db: db_dependency,
         current_user: user_dependency):
 
+    # Check venue id validity
+    venue = db.query(Venue).filter(Venue.id == venue_like.venue).first()
+    if not venue:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Invalid venue id")
+
+    # Check if venue like exists
     check_db_venue_like = db.query(VenueLike).filter(VenueLike.venue == venue_like.venue,
         VenueLike.owner_id == current_user["id"]).first()
-
-    if not check_db_venue_like:
-        venue = db.query(Venue).filter(Venue.id == venue_like.venue).first()
-        venue.num_likes += 1
-
-        db_venue_like = VenueLike(**venue_like.model_dump(), owner_id=current_user["id"])
+    if check_db_venue_like:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Like on this venue already exists")
+    
+    db_venue_like = VenueLike(**venue_like.model_dump(), owner_id=current_user["id"])
 
     db.add(db_venue_like)
+    venue.num_likes += 1
     db.commit() 
     db.refresh(db_venue_like)
-
-    return db_venue_like
+    
+    return Response(status_code=status.HTTP_201_CREATED)
 
 
 @router.delete("/like/delete", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_venue_like(venue_like: VenueLikeCreate, db: db_dependency,
         current_user: user_dependency):
     
+    # Check venue id validity
+    venue = db.query(Venue).filter(Venue.id == venue_like.venue).first() 
+    if not venue:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Invalid venue id")
+
+    # Check if venue like exists
     check_db_venue_like = db.query(VenueLike).filter(VenueLike.venue == venue_like.venue,
         VenueLike.owner_id == current_user["id"])
+    if not check_db_venue_like:
+        return Response(status_code=status.HTTP_204_NO_CONTENT,
+            content="No venue like on this venue")
     
-    if check_db_venue_like:
-        venue = db.query(Venue).filter(Venue.id == venue_like.venue).first()
-        check_db_venue_like.delete(synchronize_session=False)
-        venue.num_likes -= 1 
+    check_db_venue_like.delete(synchronize_session=False)
 
-        if venue.num_likes < 0:
-            venue.num_likes = 0
+    venue.num_likes -= 1
+    if venue.num_likes < 0:
+        venue.num_likes = 0
 
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
 
 
 # Comments

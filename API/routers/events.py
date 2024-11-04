@@ -129,7 +129,8 @@ async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
         current_user: user_dependency):
     
     # Check event id validity
-    if not db.query(Event).filter(Event.id == event_like.event).all():
+    event = db.query(Event).filter(Event.id == event_like.event).first()
+    if not event:
         return Response(status_code=status.HTTP_400_BAD_REQUEST, 
             content="Invalid event id")
 
@@ -140,12 +141,10 @@ async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
         return Response(status_code=status.HTTP_400_BAD_REQUEST,
             content="Like already exists")
     
-    event = db.query(Event).filter(Event.id == event_like.event).first()
-    event.num_likes += 1
-
     db_event_like = EventLike(**event_like.model_dump(), owner_id=current_user["id"])
 
     db.add(db_event_like)
+    event.num_likes += 1
     db.commit() 
     db.refresh(db_event_like)
 
@@ -157,7 +156,8 @@ async def delete_event_like(event_like: EventLikeCreate, db: db_dependency,
         current_user: user_dependency):
     
     # Check event id validity
-    if not db.query(Event).filter(Event.id == event_like.event).all():
+    event = db.query(Event).filter(Event.id == event_like.event).first()
+    if not event:
         return Response(status_code=status.HTTP_400_BAD_REQUEST, 
             content="Invalid event id")
 
@@ -167,8 +167,7 @@ async def delete_event_like(event_like: EventLikeCreate, db: db_dependency,
     if not check_db_event_like:
         return Response(status_code=status.HTTP_400_BAD_REQUEST,
             content="Like doesn't exist")
-
-    event = db.query(Event).filter(Event.id == event_like.event).first()
+    
     check_db_event_like.delete(synchronize_session=False)
     event.num_likes -= 1 
 
