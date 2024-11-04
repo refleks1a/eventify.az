@@ -13,6 +13,9 @@ link_regex = r"^https:\/\/(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(\/[^\s]*)?$"
 event_types = ["theatre", "concert", "exhibition", "book_fare",
         "seminar","festival","dance"]
 
+venue_types = ["museum", "theatre", "library", "cinema",
+        "comedy_club","monument","cultural_space"]
+
 # Functions
 
 def get_country_from_coordinates(latitude, longitude):
