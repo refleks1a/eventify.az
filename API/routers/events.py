@@ -238,6 +238,8 @@ async def delete_event_comment(event_comment: EventCommentDelete, db: db_depende
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+# Search events
+
 @router.get("/search/{query}", status_code=status.HTTP_200_OK)
 async def search_events(query: str, db: db_dependency):
 
