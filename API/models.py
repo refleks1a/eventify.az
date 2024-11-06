@@ -18,13 +18,14 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(63), unique=True)
+    email = Column(String(255), unique=True, nullable=False)
 
     first_name = Column(String(63), nullable=False)
     last_name = Column(String(63), nullable=False)
     hashed_password = Column(String(127))
 
     is_organizer = Column(Boolean, default=False)
-
+    is_verified = Column(Boolean, default =False, nullable=False)
 
 class Post(Base):
     __tablename__ = "posts"
