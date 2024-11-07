@@ -1,19 +1,20 @@
 from datetime import timedelta, datetime, timezone
 from typing import Annotated 
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status 
+from starlette.requests import Request
 
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 
 from database import sessionLocal 
 from models import User
-from schemas import UserLogIn, CreateUserRequest, Token
+from schemas import CreateUserRequest, Token, EmailSchema
+from routers import email_verification 
 
 import os
 
@@ -57,12 +58,35 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
         username=create_user_request.username,
         first_name=create_user_request.first_name,
         last_name=create_user_request.last_name,
-        hashed_password=bcrypt_context.hash(create_user_request.password)
+        hashed_password=bcrypt_context.hash(create_user_request.password),
+        email=create_user_request.email
     )
-    
-    db.add(create_user_model)
-    db.commit()
 
+    # Verification email sending
+    token = email_verification.token(create_user_request.email)
+    email_verification_endpoint = f'http://localhost:8000/auth/confirm-email/{token}/'
+    mail_body = {
+        'email':create_user_request.email,
+        'project_name': "eventify.az",
+        'url': email_verification_endpoint
+    }
+    print(email_verification_endpoint)
+    mail_status = await email_verification.send_email_async(subject="Email Verification: Registration Confirmation",
+        email_to=create_user_request.email, body=mail_body, template='email_verification.html')
+
+    if mail_status == True:
+        db.add(create_user_model)
+        db.commit()
+        return {
+            "message":"mail for Email Verification has been sent, kindly check your inbox.",
+            "status": status.HTTP_201_CREATED
+        }
+    else:
+        return {
+            "message":"mail for Email Verification failled to send, kindly reach out to the server guy.",
+            "status": status.HTTP_503_SERVICE_UNAVAILABLE
+        }
+    
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -139,3 +163,73 @@ def verify_token(token: str = Depends(oauth2_bearer)):
 async def verify_user_token(token: str):
     verify_token(token)
     return {"message": "Token is valid"}
+
+
+# Email verification
+
+@router.post('/confirm-email/{token}/', status_code=status.HTTP_202_ACCEPTED)
+async def user_verification(token:str, db: db_dependency):
+
+    token_data = email_verification.verify_token(token)
+    if not token_data:
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            detail= "Token for Email Verification has expired."
+        )
+    
+    user = db.query(User).filter(User.email == token_data['email']).first()
+
+    if not user:
+        raise HTTPException(
+            status_code= status.HTTP_404_NOT_FOUND,
+            detail= f"User with email {user.email} does not exist"
+        )
+    
+    if user.is_verified:
+        raise HTTPException(
+            status_code= status.HTTP_409_CONFLICT,
+            detail= f"User with email {user.email}, is already verified"
+        )
+    
+    user.is_verified = True
+    db.commit()
+    db.refresh(user)
+    
+    return {
+            'message':'Email Verification Successful',
+            'status':status.HTTP_202_ACCEPTED
+        }
+
+
+@router.post('/resend-verification/', status_code=status.HTTP_201_CREATED)
+async def resend_email_verification(email_data:EmailSchema, db: db_dependency):
+ 
+    user_check = db.query(User).filter(User.email == email_data.email).first()
+    if not user_check:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+        detail= "User information does not exist")
+    
+    token = email_verification.token(email_data.email)
+    email_verification_endpoint = f'http://localhost:8000/auth/confirm-email/{token}/'
+    mail_body = { 
+
+        'email': user_check.email,
+        'project_name': "eventify.az",
+        'url': email_verification_endpoint
+    }
+    print(email_verification_endpoint)
+    mail_status =await email_verification.send_email_async(
+    subject="Email Verification: Registration Confirmation",
+    email_to=user_check.email, body=mail_body, template='email_verification.html'
+    
+    )
+    if mail_status == True:
+        return {
+            "message":"mail for Email Verification has been sent, kindly check your inbox.",
+            "status": status.HTTP_201_CREATED
+        }
+    else:
+        return {
+            "message":"mail for Email Verification failled to send, kindly reach out to the server guy.",
+            "status": status.HTTP_503_SERVICE_UNAVAILABLE
+        }

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 from datetime import datetime, time
 
@@ -20,6 +20,7 @@ class UserLogIn(BaseModel):
 
 class CreateUserRequest(BaseModel):
     username: str
+    email: EmailStr
     password: str
     first_name: str
     last_name: str
@@ -149,3 +150,8 @@ class EventInfo(EventBase):
     comments: EventCommentInfo
 
     created_at: time
+    
+# Email
+
+class EmailSchema(BaseModel):
+    email:EmailStr
