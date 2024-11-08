@@ -12,20 +12,24 @@ from schemas import EmailStr
 
 load_dotenv()
 
-token_algo= URLSafeTimedSerializer(os.getenv("SECRET"),salt='Email_Verification_&_Forgot_password')
+token_algo = URLSafeTimedSerializer(os.getenv("SECRET"), salt='Email_Verification_&_Forgot_password')
 
 config = ConnectionConfig(
-    MAIL_USERNAME = str(os.getenv('MAIL_USER_NAME')),
-    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD'),
-    MAIL_FROM = os.getenv('MAIL_FROM'),
+    MAIL_USERNAME = str(os.getenv('MAIL_USERNAME')),
+    MAIL_PASSWORD = str(os.getenv('MAIL_PASSWORD')),
+    MAIL_FROM = str(os.getenv('MAIL_FROM')),
     MAIL_PORT = int(os.getenv('MAIL_PORT')),
-    MAIL_SERVER = os.getenv('MAIL_SERVER'),
+    MAIL_SERVER = str(os.getenv('MAIL_SERVER')),
+    MAIL_FROM_NAME= str(os.getenv("MAIL_FROM_NAME")),
     MAIL_STARTTLS = True,
     MAIL_SSL_TLS = False,
-    TEMPLATE_FOLDER = Path(__file__).parent.parent/'templates/'
+    TEMPLATE_FOLDER = Path(__file__).resolve().parent.parent/'templates/',
+    USE_CREDENTIALS = True,
+    VALIDATE_CERTS = True,
 )
 
 async def send_email_async(subject:str, email_to:EmailStr, body:dict, template:str):
+    
     message = MessageSchema(
         subject=subject,
         recipients= [email_to,],
@@ -38,7 +42,6 @@ async def send_email_async(subject:str, email_to:EmailStr, body:dict, template:s
         await fm.send_message(message, template)
         return True
     except ConnectionErrors as e:
-        print(e)
         return False
     
 

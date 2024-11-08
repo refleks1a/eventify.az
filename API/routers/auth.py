@@ -6,7 +6,6 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
 from sqlalchemy.orm import Session
 from starlette import status 
-from starlette.requests import Request
 
 from passlib.context import CryptContext
 from jose import jwt, JWTError
@@ -70,11 +69,11 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
         'project_name': "eventify.az",
         'url': email_verification_endpoint
     }
-    print(email_verification_endpoint)
-    mail_status = await email_verification.send_email_async(subject="Email Verification: Registration Confirmation",
-        email_to=create_user_request.email, body=mail_body, template='email_verification.html')
 
-    if mail_status == True:
+    mail_status = await email_verification.send_email_async(subject="Email Verification: Registration Confirmation",
+        email_to=create_user_request.email, body=mail_body, template='email_verification.html') 
+
+    if mail_status:
         db.add(create_user_model)
         db.commit()
         return {
@@ -167,7 +166,7 @@ async def verify_user_token(token: str):
 
 # Email verification
 
-@router.post('/confirm-email/{token}/', status_code=status.HTTP_202_ACCEPTED)
+@router.get('/confirm-email/{token}/', status_code=status.HTTP_200_OK)
 async def user_verification(token:str, db: db_dependency):
 
     token_data = email_verification.verify_token(token)
@@ -208,22 +207,25 @@ async def resend_email_verification(email_data:EmailSchema, db: db_dependency):
     if not user_check:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
         detail= "User information does not exist")
-    
+        
+    if user_check.is_verified:
+        raise HTTPException(
+            status_code= status.HTTP_409_CONFLICT,
+            detail= f"User with email {user_check.email}, is already verified"
+        )    
+
     token = email_verification.token(email_data.email)
     email_verification_endpoint = f'http://localhost:8000/auth/confirm-email/{token}/'
     mail_body = { 
-
         'email': user_check.email,
         'project_name': "eventify.az",
         'url': email_verification_endpoint
     }
-    print(email_verification_endpoint)
-    mail_status =await email_verification.send_email_async(
-    subject="Email Verification: Registration Confirmation",
-    email_to=user_check.email, body=mail_body, template='email_verification.html'
-    
-    )
-    if mail_status == True:
+
+    mail_status = await email_verification.send_email_async(subject="Email Verification: Registration Confirmation",
+    email_to=str(user_check.email), body=mail_body, template='email_verification.html')
+
+    if mail_status:
         return {
             "message":"mail for Email Verification has been sent, kindly check your inbox.",
             "status": status.HTTP_201_CREATED

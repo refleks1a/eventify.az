@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from typing import Annotated
 
@@ -14,10 +15,12 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,
 )
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1"])
 
 app.include_router(auth.router)
 app.include_router(venues.router)
