@@ -26,7 +26,7 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
 
 | Endpoint                      | Method | Description                     | Auth Required | 
 |-------------------------------|--------|---------------------------------|---------------|
-| `/auth/`                      | `POST` | Creates a new user              | No            |
+| `/auth`                       | `POST` | Creates a new user              | No            |
 | `/auth/token`                 | `POST` | Retrieves an access token       | No            |
 | `/auth/verify-token/{token}`  | `GET`  | Verifies token validity         | No            |
 | `/auth/confirm-email/{token}` | `GET`  | Confirms user email             | No            |
@@ -35,7 +35,7 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
 #### Details:
 
 - **Create User**
-  - **URL**: `/auth/`
+  - **URL**: `/auth`
   - **Method**: `POST`
   - **Request Body**:
     - `username`: `string` (required)
@@ -67,7 +67,7 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
     - `401`: Invalid or expired token
 
 - **User Verification**
-  - **URL**: `/auth/confirm-email/{token}/`
+  - **URL**: `/auth/confirm-email/{token}`
   - **Method**: `GET`
   - **Path Parameters**: `token` (required, string)
   - **Response**:
@@ -75,7 +75,7 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
     - `422`: Invalid token
 
 - **Resend Email Verification**
-  - **URL**: `/auth/resend-verification/`
+  - **URL**: `/auth/resend-verification`
   - **Method**: `POST`
   - **Request Body**:
     - `email`: `string` (required)

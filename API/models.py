@@ -17,11 +17,11 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(63), unique=True)
+    username = Column(String(63, collation="utf8mb4_bin"), unique=True)
     email = Column(String(255), unique=True, nullable=False)
 
-    first_name = Column(String(63), nullable=False)
-    last_name = Column(String(63), nullable=False)
+    first_name = Column(String(63), nullable=True)
+    last_name = Column(String(63), nullable=True)
     hashed_password = Column(String(127))
 
     is_organizer = Column(Boolean, default=False)
