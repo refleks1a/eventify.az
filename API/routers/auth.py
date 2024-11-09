@@ -45,14 +45,17 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_user(db: db_dependency, create_user_request: CreateUserRequest):
     
     # Check is user with this username already exists
-    user = db.query(User).filter(User.username == create_user_request.username).first()
-    if user:
-        raise HTTPException(status_code=400, detail="User with such username already exists")
-    
+    user_username = db.query(User).filter(User.username == create_user_request.username).first()
+    user_email = db.query(User).filter(User.email == create_user_request.email).first()
+    if user_username:
+        raise HTTPException(status_code=400, detail="User with this username already exists")
+    elif user_email:
+        raise HTTPException(status_code=400, detail="User with this email already exists")
+
     create_user_model = User(
         username=create_user_request.username,
         first_name=create_user_request.first_name,
@@ -93,7 +96,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
     
     # Check if user exists
     user = authenticate_user(form_data.username, form_data.password, db)
-    if not user:
+    if not user or not user.is_verified:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate user.')
     
     token = create_access_token(user.username, user.id, timedelta(minutes=20))
@@ -101,7 +104,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 
 
 def authenticate_user(username: str, password: str, db):
-
+    
     user = db.query(User).filter(User.username == username).first()
     # Check if user with such username exists
     if not user:
@@ -139,7 +142,7 @@ async def get_current_user(token: Annotated[str, Depends (oauth2_bearer)],
                 "id": user_id,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
-                "is_organizer": user.is_organizer
+                "is_organizer": user.is_organizer,
                 }
     
     except JWTError:
@@ -147,26 +150,29 @@ async def get_current_user(token: Annotated[str, Depends (oauth2_bearer)],
             detail='Could not validate user.')
 
 
-def verify_token(token: str = Depends(oauth2_bearer)):
+@router.get("/verify-token", status_code=status.HTTP_200_OK)
+async def verify_token(token: Annotated[str, Depends(oauth2_bearer)], db: db_dependency):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get ("sub")
-        if username is None:
-            raise HTTPException(status_code=403, detail="Token is invalid or expired")
-        return payload
+        username: str = payload.get("sub")
+        user_id: int = payload.get("id")
+
+        if username is None or user_id is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
+
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+        return {"is_authenticated": True}
+
     except JWTError:
-        raise HTTPException(status_code=403, detail="Token is invalid or expired")
-
-
-@router.get("/verify-token/{token}")
-async def verify_user_token(token: str):
-    verify_token(token)
-    return {"message": "Token is valid"}
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user.")
 
 
 # Email verification
 
-@router.get('/confirm-email/{token}/', status_code=status.HTTP_200_OK)
+@router.get('/confirm-email/{token}', status_code=status.HTTP_200_OK)
 async def user_verification(token:str, db: db_dependency):
 
     token_data = email_verification.verify_token(token)
@@ -200,7 +206,7 @@ async def user_verification(token:str, db: db_dependency):
         }
 
 
-@router.post('/resend-verification/', status_code=status.HTTP_201_CREATED)
+@router.post('/resend-verification', status_code=status.HTTP_201_CREATED)
 async def resend_email_verification(email_data:EmailSchema, db: db_dependency):
  
     user_check = db.query(User).filter(User.email == email_data.email).first()

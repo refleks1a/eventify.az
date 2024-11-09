@@ -183,7 +183,7 @@ async def delete_event_like(event_like: EventLikeCreate, db: db_dependency,
 
 # Comments
 
-@router.post("/comment", status_code=status.HTTP_201_CREATED, response_model= EventCommentInfo)
+@router.post("/comment", status_code=status.HTTP_201_CREATED)
 def create_event_comment(event_comment: EventCommentCreate, db: db_dependency,
         current_user: user_dependency):
 
@@ -221,7 +221,7 @@ def get_comment(comment_id: int, db: db_dependency):
     return comment
 
 
-@router.delete("/comment/", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/comment", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_event_comment(event_comment: EventCommentDelete, db: db_dependency,
         current_user: user_dependency):
     
