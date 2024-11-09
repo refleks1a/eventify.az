@@ -17,6 +17,7 @@ email_validator==2.1.1
 fastapi==0.111.0
 fastapi-cli==0.0.2
 fastapi-mail==1.4.1
+fastapi-sso==0.17.0
 fastapi-storages==0.3.0
 geographiclib==2.0
 geopy==2.4.1
@@ -31,6 +32,7 @@ jmespath==1.0.1
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 mdurl==0.1.2
+oauthlib==3.2.2
 orjson==3.10.2
 passlib==1.7.4
 pyasn1==0.6.0

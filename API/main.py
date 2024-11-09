@@ -8,7 +8,7 @@ from typing import Annotated
 
 from models import Base
 from database import engine, sessionLocal
-from routers import auth, venues, events
+from routers import auth, venues, events, social_auth
 
 
 app = FastAPI()
@@ -25,6 +25,7 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1
 app.include_router(auth.router)
 app.include_router(venues.router)
 app.include_router(events.router)
+app.include_router(social_auth.router)
 
 Base.metadata.create_all(bind=engine)
 
@@ -42,7 +43,7 @@ db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends (auth.get_current_user)]
 
 @app.post("/user", status_code=status.HTTP_200_OK)
-async def user(user: user_dependency, db: db_dependency):
+async def user(user: user_dependency):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
     return user
