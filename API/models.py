@@ -6,10 +6,6 @@ from sqlalchemy.ext.declarative import declared_attr
 
 from datetime import time
 
-from fastapi_storages import FileSystemStorage
-from fastapi_storages.integrations.sqlalchemy import FileType
-
-
 from database import Base
 
 
@@ -23,6 +19,10 @@ class User(Base):
     first_name = Column(String(63), nullable=True)
     last_name = Column(String(63), nullable=True)
     hashed_password = Column(String(127))
+
+    # For google/facebook auth
+    social_id = Column(String(255), unique=True, nullable=True)
+    provider = Column(String(63), default="local")
 
     is_organizer = Column(Boolean, default=False)
     is_verified = Column(Boolean, default =False, nullable=False)
