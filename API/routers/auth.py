@@ -42,6 +42,7 @@ def get_db():
         yield db
     finally:
         db.close() 
+
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
@@ -88,7 +89,6 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
             "message":"mail for Email Verification failled to send, kindly reach out to the server guy.",
             "status": status.HTTP_503_SERVICE_UNAVAILABLE
         }
-    
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -242,3 +242,11 @@ async def resend_email_verification(email_data:EmailSchema, db: db_dependency):
             "message":"mail for Email Verification failled to send, kindly reach out to the server guy.",
             "status": status.HTTP_503_SERVICE_UNAVAILABLE
         }
+
+
+# Get user data
+@router.post("/user")
+async def user_data(user: Annotated[get_current_user, Depends()]):
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication Failed')
+    return user   
