@@ -5,6 +5,7 @@ from datetime import datetime
 
 
 # Vars
+
 latitude_regex = r"^(\+|-)?(90(\.0+)?|[1-8]?\d(\.\d+)?)$"
 longitude_regex = r"^(\+|-)?(180(\.0+)?|((1[0-7]\d)|(\d{1,2}))(\.\d+)?)$"
 time_regex = r"^(?:[01]?[0-9]|2[0-3]):[0-5]?[0-9](?::[0-5]?[0-9])?$"
@@ -15,6 +16,7 @@ event_types = ["theatre", "concert", "exhibition", "book_fare",
 
 venue_types = ["museum", "theatre", "library", "cinema",
         "comedy_club","monument","cultural_space"]
+
 
 # Functions
 
@@ -47,3 +49,8 @@ def is_past_date(input_date_str):
         return False
     else:
         return True
+
+
+def remove_domain(email):
+    # Split the email at the '@' symbol and take the first part
+    return email.split("@")[0]
