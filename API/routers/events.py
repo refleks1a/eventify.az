@@ -91,7 +91,7 @@ async def create_event(event: EventCreate, db: db_dependency,
     return Response(status_code=status.HTTP_201_CREATED)
 
 
-@router.get("/all", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK)
 async def get_all_events(db: db_dependency):
     
     events = db.query(Event).order_by(text("num_likes")).all()
@@ -153,7 +153,7 @@ async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
     return Response(status_code=status.HTTP_201_CREATED) 
     
 
-@router.delete("/like/delete", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/like", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_event_like(event_like: EventLikeCreate, db: db_dependency,
         current_user: user_dependency):
     

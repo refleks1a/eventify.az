@@ -75,7 +75,7 @@ async def create_venue(venue: VenueCreate, db: db_dependency,
     db.commit() 
 
 
-@router.get("/all", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK)
 async def get_all_venues(db: db_dependency):
     
     venues = db.query(Venue).order_by(text("num_likes")).all()
@@ -123,7 +123,7 @@ async def create_venue_like(venue_like: VenueLikeCreate, db: db_dependency,
     return Response(status_code=status.HTTP_201_CREATED)
 
 
-@router.delete("/like/delete", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/like", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_venue_like(venue_like: VenueLikeCreate, db: db_dependency,
         current_user: user_dependency):
     
@@ -191,7 +191,7 @@ def get_comment(comment_id: int, db: db_dependency):
     return comment
 
 
-@router.delete("/comment/delete", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/comment", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_venue_comment(venue_comment: VenueCommentDelete, db: db_dependency,
         current_user: user_dependency):
 
