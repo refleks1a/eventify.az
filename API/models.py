@@ -25,16 +25,9 @@ class User(Base):
     provider = Column(String(63), default="local")
 
     is_organizer = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False)
+
     is_verified = Column(Boolean, default =False, nullable=False)
-
-class Post(Base):
-    __tablename__ = "posts"
-
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(123))
-    content = Column(String(255))
-    user_id = Column(Integer)
-
 
 
 class Venue(Base):
@@ -155,3 +148,19 @@ class VenueLike(Base, Like):
 
     venue = Column(Integer, ForeignKey("venues.id"), nullable=False)
 
+# Chat rooms
+
+class ChatRoom(Base):
+    __tablename__ = "chat_rooms"
+
+    id = Column(Integer, primary_key=True, index=True)
+    venue_id = Column(Integer, ForeignKey("venues.id"), nullable = False)
+
+    name = Column(String(255), nullable=False, unique=True)
+
+    max_capacity = Column(Integer, nullable=False, default=50)
+    current_capacity = Column(Integer, default=0)
+    status = Column(Boolean, default=False)
+
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    

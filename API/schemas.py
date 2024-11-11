@@ -151,6 +151,24 @@ class EventInfo(EventBase):
 
     created_at: time
     
+# Chat rooms
+
+class ChatRoomBase(BaseModel):
+    venue_id:int
+
+    name: str
+
+    max_capacity: int
+    current_capacity: int
+    status: bool
+
+class ChatRoomCreate(ChatRoomBase):
+    pass
+
+class ChatRoomInfo(ChatRoomBase):
+    id: int
+    created_at: time
+
 # Email
 
 class EmailSchema(BaseModel):

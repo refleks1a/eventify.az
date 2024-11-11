@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime, timezone
 from typing import Annotated 
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
 from sqlalchemy.orm import Session
@@ -143,6 +143,7 @@ async def get_current_user(token: Annotated[str, Depends (oauth2_bearer)],
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "is_organizer": user.is_organizer,
+                "is_admin": user.is_admin
                 }
     
     except JWTError:
