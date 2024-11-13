@@ -1,6 +1,8 @@
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
 
+import re
+
 from datetime import datetime
 
 
@@ -54,3 +56,19 @@ def is_past_date(input_date_str):
 def remove_domain(email):
     # Split the email at the '@' symbol and take the first part
     return email.split("@")[0]
+
+
+def is_secure_password(password):
+    # Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number, and one special character
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter."
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter."
+    if not re.search(r'[0-9]', password):
+        return False, "Password must contain at least one number."
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, "Password must contain at least one special character."
+
+    return True, "Password is secure."

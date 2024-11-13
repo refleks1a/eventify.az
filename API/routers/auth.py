@@ -14,6 +14,7 @@ from database import sessionLocal
 from models import User
 from schemas import CreateUserRequest, Token, EmailSchema
 from routers import email_verification 
+from utils import is_secure_password
 
 import os
 
@@ -57,6 +58,12 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
     elif user_email:
         raise HTTPException(status_code=400, detail="User with this email already exists")
 
+    # Check password security level
+    password_status, password_detail = is_secure_password(create_user_request.password)
+    if not password_status:
+        raise HTTPException(status_code=400, detail=password_detail)
+
+    # Create user
     create_user_model = User(
         username=create_user_request.username,
         first_name=create_user_request.first_name,
