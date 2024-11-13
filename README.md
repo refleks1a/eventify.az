@@ -48,7 +48,7 @@ CREATE DATABASE eventifyaz;
 
 Clone the project
 ```bash
-https://github.com/refleks1a/eventify.az
+git clone -b API --single-branch https://github.com/refleks1a/eventify.az.git
 ```
 
 Create virtual environment  by running
