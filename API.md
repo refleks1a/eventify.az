@@ -31,6 +31,7 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
 | `/auth/verify-token/{token}`  | `GET`  | Verifies token validity         | No            |
 | `/auth/confirm-email/{token}` | `GET`  | Confirms user email             | No            |
 | `/auth/resend-verification`   | `POST` | Resends email verification link | No            |
+| `/auth/user`                  | `POST` | Get user data                   | No            |
 
 #### Details:
 
@@ -83,6 +84,14 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
     - `201`: Verification email resent
     - `422`: Email not found or already verified
 
+- **User data**
+  - **URL**: `/auth/user`
+  - **Method**: `POST`
+  - **Authorization**: Bearer token must be provided in the `Authorization` header.
+  - **Response**:
+    - `200`: Valid user
+    - `401`: Invalid or expired token
+
 ---
 
 ### Venue Endpoints
@@ -90,14 +99,14 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
 | Endpoint                       |  Method  | Description                 | Auth Required |
 |--------------------------------|----------|-----------------------------|---------------|
 | `/venues`                      | `POST`   | Creates a new venue         | Yes           |
-| `/venues/all`                  | `GET`    | Retrieves all venues        | No            |
+| `/venues`                      | `GET`    | Retrieves all venues        | No            |
 | `/venues/{venue_id}`           | `GET`    | Retrieves specific venue    | No            |
 | `/venues/like`                 | `POST`   | Likes a venue               | Yes           |
-| `/venues/like/delete`          | `DELETE` | Removes a like from a venue | Yes           |
+| `/venues/like`                 | `DELETE` | Removes a like from a venue | Yes           |
 | `/venues/comment`              | `POST`   | Adds a comment to a venue   | Yes           |
+| `/venues/comment`              | `DELETE` | Deletes venue comment       | Yes           |
 | `/venues/{venue_id}/comment`   | `GET`    | Gets all venue comments     | No            |
 | `/venues/comment/{comment_id}` | `GET`    | Gets specific venue comment | No            |
-| `/venues/comment/delete`       | `DELETE` | Deletes venue comment       | Yes           |
 | `/venues/search/{query}`       | `GET`    | Search venues               | No            |
 
 #### Details:
@@ -120,7 +129,7 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
     - `422`: Validation error
 
 - **Get All Venues**
-  - **URL**: `/venues/all`
+  - **URL**: `/venues`
   - **Method**: `GET`
   - **Response**:
     - `200`: List of venues retrieved
@@ -145,7 +154,7 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
     - `422`: Invalid venue ID
 
 - **Delete Venue Like**
-  - **URL**: `/venues/like/delete`
+  - **URL**: `/venues/like`
   - **Method**: `DELETE`
   - **Auth Required**: Yes
   - **Authorization**: Bearer token must be provided in the `Authorization` header.
@@ -184,7 +193,7 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
     - `404`: Venue not found
 
 - **Delete Venue Comment**
-  - **URL**: `/venues/comment/delete`
+  - **URL**: `/venues/comment`
   - **Method**: `DELETE`
   - **Auth Required**: Yes
   - **Authorization**: Bearer token must be provided in the `Authorization` header.
@@ -208,15 +217,15 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
 | Endpoint                       |  Method  | Description                 | Auth Required |
 |--------------------------------|----------|-----------------------------|---------------|
 | `/events`                      | `POST`   | Creates a new event         | Yes           |
-| `/events/all`                  | `GET`    | Retrieves all events        | No            |
+| `/events`                      | `GET`    | Retrieves all events        | No            |
 | `/events/favorites`            | `GET`    | Retrieves favorite events   | Yes           |
 | `/events/{event_id}`           | `GET`    | Retrieves specific event    | No            |
 | `/events/like`                 | `POST`   | Creates a new like on event | Yes           |
-| `/events/like/delete`          | `DELETE` | Deletes the like from event | Yes           |
+| `/events/like`                 | `DELETE` | Deletes the like from event | Yes           |
 | `/events/comment`              | `POST`   | Creates a comment on event  | Yes           |
+| `/events/comment`              | `DELETE` | Deletes event comment       | Yes           |
 | `/events/{event_id}/comment`   | `GET`    | Retrieves event comments    | No            |
 | `/events/comment/{comment_id}` | `GET`    | Gets specific event comment | No            |
-| `/events/comment`              | `DELETE` | Deletes event comment       | Yes           |
 | `/events/search/{query}`       | `GET`    | Search through event        | No            |
 
 #### Details:
@@ -241,7 +250,7 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
     - `422`: Validation error
 
 - **Get All Events**
-  - **URL**: `/events/all`
+  - **URL**: `/events`
   - **Method**: `GET`
   - **Response**:
     - `200`: List of events retrieved
@@ -274,7 +283,7 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
     - `422`: Validation error
 
 - **Delete Event Like**
-  - **URL**: `/events/like/delete`
+  - **URL**: `/events/like`
   - **Method**: `DELETE`
   - **Auth Required**: Yes
   - **Authorization**: Bearer token must be provided in the `Authorization` header.
