@@ -202,7 +202,7 @@ function drawRoute(place) {
 // Get
 async function getEvents() {
     try {
-        const response = await fetch("http://localhost:8000/events/all");
+        const response = await fetch("http://localhost:8000/events");
         const events = await response.json();
 
         const eventsContainer = document.querySelector(".upcoming-events");
@@ -411,7 +411,7 @@ function drawRoute(place) {
 // Get
 async function getVenues() {
     try {
-        const response = await fetch('http://localhost:8000/venues/all');
+        const response = await fetch('http://localhost:8000/venues');
         const venues = await response.json();
         
         const venuesContainer = document.querySelector(".main_left2");
@@ -544,26 +544,66 @@ function showDescription(place) {
     }
 }
 
+async function checkAuthenticationStatus() {
+    let token = localStorage.getItem("access_token");
+
+    if (!token) {
+        console.log("User is not authenticated");
+        return;
+    } else {
+        console.log("User is authenticated");
+    }
+
+    try {
+        const response = await fetch('http://localhost:8000/auth/verify-token', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.is_authenticated) {
+                console.log(`User ${data.username} is authenticated`);
+            } else {
+                window.location.href = '/login';
+            }
+        } else {
+            console.error('User is not authenticated');
+        }
+    } catch (error) {
+        console.error('Error while checking authentication status:', error);
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    // login({
-    //     username: "123",
-    //     password: "123",
-    // })
-        
-    initMap()
+    let token = localStorage.getItem("access_token");
+
+    if (localStorage.getItem("flag") === null) {
+        localStorage.setItem("flag", "false");
+    }
+
+    initMap();
     getEvents();
     getVenues();
+
+
+    if (token) {
+        if (localStorage.getItem("flag") === "false") {
+            console.log("First-time login check");
+            checkAuthenticationStatus();
+            localStorage.setItem("flag", "true");
+        } else {
+            console.log("Recurrent check every 5 minutes");
+            setInterval(() => {
+                checkAuthenticationStatus();
+            }, 300000);
+        }
+    } else {
+        console.log("No token found, user needs to log in");
+    }
 })
 
-// {
-//     venue_id: 1,
-//     organizer_id: 1,
-//     title: "bla",
-//     description: "bla",
-//     event_type: "concert",
-//     date: "2024-10-12T18:00:18.248Z",
-//     start: "18:00:18.248Z",
-//     finish: "18:00:18.248Z"
-// }
 
 window.initMap = initMap;

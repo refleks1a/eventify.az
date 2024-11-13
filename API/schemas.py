@@ -26,6 +26,15 @@ class CreateUserRequest(BaseModel):
     last_name: str
     is_organizer: int
 
+class CreateUserGoogle(BaseModel):
+    id: int
+    email: EmailStr
+    first_name: str
+    last_name: str
+    display_name: str
+    picture: str
+    provider: str
+
 class Token (BaseModel):
     access_token: str
     token_type: str
