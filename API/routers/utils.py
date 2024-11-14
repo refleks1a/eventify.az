@@ -3,7 +3,15 @@ from geopy.exc import GeocoderTimedOut
 
 import re
 
+from itsdangerous import URLSafeTimedSerializer
+
 from datetime import datetime
+import os
+
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 # Vars
@@ -19,6 +27,9 @@ event_types = ["theatre", "concert", "exhibition", "book_fare",
 venue_types = ["museum", "theatre", "library", "cinema",
         "comedy_club","monument","cultural_space"]
 
+serializer = URLSafeTimedSerializer(
+    secret_key=os.getenv("SECRET"), salt="email-configuration"
+)
 
 # Functions
 
@@ -72,3 +83,10 @@ def is_secure_password(password):
         return False, "Password must contain at least one special character."
 
     return True, "Password is secure."
+
+
+def create_url_safe_token(data: dict):
+
+    token = serializer.dumps(data)
+
+    return token

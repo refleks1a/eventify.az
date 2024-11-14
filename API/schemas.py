@@ -181,4 +181,9 @@ class ChatRoomInfo(ChatRoomBase):
 # Email
 
 class EmailSchema(BaseModel):
-    email:EmailStr
+    email: EmailStr
+
+class PasswordResetConfirmModel(BaseModel):
+    new_password: str
+    confirm_new_password: str
+

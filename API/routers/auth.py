@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime, timezone
 from typing import Annotated 
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
 from sqlalchemy.orm import Session
@@ -12,9 +12,9 @@ from jose import jwt, JWTError
 
 from database import sessionLocal 
 from models import User
-from schemas import CreateUserRequest, Token, EmailSchema
+from schemas import CreateUserRequest, Token, EmailSchema, PasswordResetConfirmModel
 from routers import email_verification 
-from utils import is_secure_password
+from .utils import is_secure_password
 
 import os
 
@@ -248,6 +248,83 @@ async def resend_email_verification(email_data:EmailSchema, db: db_dependency):
         return {
             "message":"mail for Email Verification failled to send, kindly reach out to the server guy.",
             "status": status.HTTP_503_SERVICE_UNAVAILABLE
+        }
+    
+@router.post("/password-reset-request")
+async def password_reset_request(data: EmailSchema, db: db_dependency):
+
+    email = data.email
+    # Check if user with input email exists
+    if not db.query(User).filter(User.email == email).first():
+        return {
+            "message":"User with this email address doesn't exist",
+            "status": status.HTTP_400_BAD_REQUEST
+        }
+
+    token = email_verification.token(email)
+    link = f"http://localhost:8000/auth/password-reset-confirm/{token}"
+
+    mail_body = {
+        'email': email,
+        'project_name': "eventify.az",
+        'url': link
+    }
+    mail_status = await email_verification.send_email_async(subject="Password reset",
+        email_to=email, body=mail_body, template='reset_password.html') 
+
+    if mail_status:
+        return {
+            "message":"Please check your email for instructions to reset your password.",
+            "status": status.HTTP_200_OK
+        }
+    
+    return {
+        "message":"mail for password reset failled to send, kindly reach out to the server guy.",
+        "status": status.HTTP_503_SERVICE_UNAVAILABLE
+    }
+
+
+@router.post("/password-reset-confirm/{token}")
+async def reset_account_password(token: str, passwords: PasswordResetConfirmModel, db: db_dependency):
+    
+    new_password = passwords.new_password
+    confirm_password = passwords.confirm_new_password
+
+    # Make sure passwords match
+    if new_password != confirm_password:
+        raise HTTPException(detail="Passwords do not match", status_code=status.HTTP_400_BAD_REQUEST)
+    # Make sure password is secure
+    password_status, password_detail = is_secure_password(new_password)
+    if not password_status:
+        raise HTTPException(detail=password_detail, status_code=400)
+
+    token_data = email_verification.verify_token(token)
+    # Make sure mail is valid
+    email = token_data["email"]
+    if email:
+        # Make sure user exists
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(
+                detail="User doesn't exist", 
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+        # Hash the password
+        passwd_hash = bcrypt_context.hash(new_password)
+        # Update user password
+        setattr(user, "hashed_password", passwd_hash)
+        # Commit changes to database
+        db.commit()
+        db.refresh(user)
+
+        return {
+            "message":"Password reset Successfully.",
+            "status": status.HTTP_200_OK
+        }
+
+    return {
+            "message":"Token is not valid, or expired.",
+            "status": status.HTTP_400_BAD_REQUEST
         }
 
 
