@@ -95,20 +95,47 @@ async def create_event(event: EventCreate, db: db_dependency,
 async def get_all_events(db: db_dependency):
     
     events = db.query(Event).order_by(text("num_likes")).all()
+    venues = db.query(Venue).all()
+
+    events_data = []
+
+    for event in events:
+        for venue in venues:
+            if venue.id == event.venue_id:
+                break
+        
+        events_data.append({
+            "event": event,
+            "location": {
+                "lat": venue.lat,
+                "lng": venue.lng
+            }
+        })
     
-    return events
+
+    return events_data
 
 @router.get("/favorites", status_code=status.HTTP_200_OK)
 async def get_favorite_events(db: db_dependency, current_user: user_dependency):
     
     likes = db.query(EventLike).filter(EventLike.owner_id == current_user["id"]).all()
+    venues = db.query(Venue).all()
     events = []
 
     for like in likes:
         event = db.query(Event).filter(Event.id == like.event).first()
         # If event is not Null append it to events list
         if event:
-            events.append(event)
+            for venue in venues:
+                if venue.id == event.venue_id:
+                    break
+            events.append({
+                "event": event,
+                "location": {
+                    "lat": venue.lat,
+                    "lng": venue.lng
+                }
+            })
 
     return events
 
@@ -121,8 +148,15 @@ async def get_event(event_id: int, db: db_dependency):
     if not event:
         return Response(status_code=status.HTTP_404_NOT_FOUND,
             content="Invalid event id")
+    venue = db.query(Venue).filter(Venue.id == event.venue_id).first()
     
-    return event
+    return {
+        "event": event,
+        "location": {
+            "lat": venue.lat,
+            "lng": venue.lng
+        }
+    }
 
 # Likes
 
@@ -247,4 +281,22 @@ async def search_events(query: str, db: db_dependency):
             Event.title.ilike(f"%{query[:127]}%"),
             Event.description.ilike(f"%{query[:127]}%"))
         ).limit(10).all()
-    return events
+    venues = db.query(Venue).all()
+
+    events_data = []
+
+    for event in events:
+        for venue in venues:
+            if venue.id == event.venue_id:
+                break
+        
+        events_data.append({
+            "event": event,
+            "location": {
+                "lat": venue.lat,
+                "lng": venue.lng
+            }
+        })
+    
+
+    return events_data
