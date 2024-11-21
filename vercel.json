@@ -7,10 +7,9 @@
       }
     ],
     "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "API/main.py"
-      }
+      { "src": "/", "dest": "API/main.py" },
+      { "src": "/docs", "dest": "API/main.py" },
+      { "src": "/openapi.json", "dest": "API/main.py" }
     ]
   }
   
