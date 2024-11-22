@@ -30,6 +30,11 @@
 <li><a href="">Redis</a></li>
 </ul> </details>
 
+## :toolbox: Access API
+
+### :bangbang: Public url
+https://eventify-az.onrender.com
+
 ## :toolbox: Getting Started
 
 ### :bangbang: Prerequisites
