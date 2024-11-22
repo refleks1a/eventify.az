@@ -74,7 +74,7 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
 
     # Verification email sending
     token = email_verification.token(create_user_request.email)
-    email_verification_endpoint = f'http://localhost:8000/auth/confirm-email/{token}/'
+    email_verification_endpoint = f'https://eventify-az.onrender.com/auth/confirm-email/{token}/'
     mail_body = {
         'email':create_user_request.email,
         'project_name': "eventify.az",
@@ -229,7 +229,7 @@ async def resend_email_verification(email_data:EmailSchema, db: db_dependency):
         )    
 
     token = email_verification.token(email_data.email)
-    email_verification_endpoint = f'http://localhost:8000/auth/confirm-email/{token}/'
+    email_verification_endpoint = f'https://eventify-az.onrender.com/auth/confirm-email/{token}/'
     mail_body = { 
         'email': user_check.email,
         'project_name': "eventify.az",
@@ -262,7 +262,7 @@ async def password_reset_request(data: EmailSchema, db: db_dependency):
         }
 
     token = email_verification.token(email)
-    link = f"http://localhost:8000/auth/password-reset-confirm/{token}"
+    link = f"https://eventify-az.onrender.com/auth/password-reset-confirm/{token}"
 
     mail_body = {
         'email': email,
