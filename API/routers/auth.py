@@ -107,7 +107,40 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate user.')
     
     token = create_access_token(user.username, user.id, timedelta(minutes=20))
-    return {"access_token": token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(user.username, user.id)
+
+    return {"access_token": token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+
+@router.post("/token/refresh", response_model=Token)
+async def refresh_access_token(refresh_token: str):
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        if payload.get("type") != "refresh":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type."
+            )
+        
+        user_id = payload.get("id")
+        username = payload.get("sub")
+                
+        if not user_id or not username:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token."
+            )
+        
+        access_token = create_access_token(username, user_id, timedelta(minutes=20))
+        return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+    
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired."
+        )
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token."
+        )
 
 
 def authenticate_user(username: str, password: str, db):
@@ -128,6 +161,13 @@ def create_access_token(username: str, user_id: int, expires_delta: timedelta):
     expires = datetime.now(timezone.utc) + expires_delta
     encode.update({"exp": expires})
 
+    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_refresh_token(username: str, user_id: int):
+    encode = {"sub": username, "id": user_id}
+    expires = datetime.now(timezone.utc) + timedelta(days=7)
+    encode.update({"exp": expires, "type": "refresh"})
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 

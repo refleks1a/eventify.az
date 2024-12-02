@@ -37,6 +37,7 @@ class CreateUserGoogle(BaseModel):
 
 class Token (BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
 
 
@@ -138,7 +139,6 @@ class EventLikeInfo(EventLikeBase):
 # Event: Base    
 class EventBase(BaseModel):
     venue_id: int
-    organizer_id: int
 
     title: str
     description: str
@@ -154,7 +154,8 @@ class EventCreate(EventBase):
 
 class EventInfo(EventBase):
     id: int
-
+    organizer_id: int
+    
     num_likes: int
     comments: EventCommentInfo
 
