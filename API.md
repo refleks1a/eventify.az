@@ -24,14 +24,17 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
 
 ### Authentication Endpoints
 
-| Endpoint                      | Method | Description                     | Auth Required | 
-|-------------------------------|--------|---------------------------------|---------------|
-| `/auth`                       | `POST` | Creates a new user              | No            |
-| `/auth/token`                 | `POST` | Retrieves an access token       | No            |
-| `/auth/verify-token/{token}`  | `GET`  | Verifies token validity         | No            |
-| `/auth/confirm-email/{token}` | `GET`  | Confirms user email             | No            |
-| `/auth/resend-verification`   | `POST` | Resends email verification link | No            |
-| `/auth/user`                  | `POST` | Get user data                   | No            |
+| Endpoint Name                         | Method | Description                       | Auth Required | 
+|---------------------------------------|--------|-----------------------------------|---------------|
+| `/auth`                               | `POST` | Creates a new user                | No            |
+| `/auth/token`                         | `POST` | Retrieves an access token         | No            |
+| `/auth/token/refresh`                 | `POST` | Refresh an access token           | No            |
+| `/auth/verify-token/`                 | `GET`  | Verifies token validity           | Yes           |
+| `/auth/confirm-email/{token}`         | `GET`  | Confirms user email               | No            |
+| `/auth/resend-verification`           | `POST` | Resends email verification link   | No            |
+| `/auth/password-reset-request`        | `POST` | Send password reset link to email | No            |
+| `/auth/password-reset-confirm/{token}`| `POST` | Confirm password reset            | No            |
+| `/auth/user`                          | `POST` | Get user data                     | Yes           |
 
 #### Details:
 
@@ -59,6 +62,15 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
     - `200`: Token received
     - `422`: Validation error
 
+- **Refresh Access Token**
+  - **URL**: `/auth/token/refresh`
+  - **Method**: `POST`
+  - **Request Body** (form data):
+    - `refresh_token`: `string` (required)
+  - **Response**:
+    - `200`: Token received
+    - `422`: Validation error
+
 - **Verify User Token**
   - **URL**: `/auth/verify-token/{token}`
   - **Method**: `GET`
@@ -82,6 +94,26 @@ Endpoints requiring authorization will be marked with **Auth Required**. Ensure 
     - `email`: `string` (required)
   - **Response**:
     - `201`: Verification email resent
+    - `422`: Email not found or already verified
+
+- **Send Password Reset Link To Email**
+  - **URL**: `/auth/password-reset-request`
+  - **Method**: `POST`
+  - **Request Body**:
+    - `email`: `string` (required)
+  - **Response**:
+    - `200`: Password Reset email resent
+    - `422`: Email not found or already verified
+
+- **Password Reset Confirm**
+  - **URL**: `/auth/password-reset-confirm/{token}`
+  - **Method**: `POST`
+  - **Path Parameters**: `token` (required, string)
+  - **Request Body**:
+    - `new_password`: `string` (required)
+    - `confirm_new_password`: `string` (required)
+  - **Response**:
+    - `200`: Password successfully changed 
     - `422`: Email not found or already verified
 
 - **User data**
