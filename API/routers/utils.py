@@ -1,11 +1,13 @@
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
 
+from fastapi import Request
+
 import re
 
 from itsdangerous import URLSafeTimedSerializer
 
-from datetime import datetime
+from datetime import datetime, time
 import os
 
 from dotenv import load_dotenv
@@ -90,3 +92,6 @@ def create_url_safe_token(data: dict):
     token = serializer.dumps(data)
 
     return token
+
+def get_redis(request: Request):
+    return request.app.state.redis
