@@ -13,7 +13,7 @@ from datetime import timedelta
 from schemas import CreateUserGoogle
 from models import User
 from database import sessionLocal 
-from .auth import authenticate_user, create_access_token, get_current_user
+from .auth import authenticate_user, create_access_token, get_current_user, create_refresh_token
 from .utils import remove_domain
 
 
@@ -43,9 +43,9 @@ async def login(user: user_dependency, db: db_dependency):
     if user.provider == "google":
         authenticate_user(user.username, f"{user.social_id}{user.provider}", db)
         token = create_access_token(user.username, user.id, timedelta(minutes=20))
-        print(2)
-        return {"access_token": token, "token_type": "bearer"}
-    print(4)
+        refresh_token = create_refresh_token(user.username, user.id)
+        return {"access_token": token, "refresh_token": refresh_token, "token_type": "bearer"}
+
     return {"response": "Invalid provider", "status": status.HTTP_403_FORBIDDEN}
 
 
@@ -61,7 +61,6 @@ async def google_auth(db: db_dependency, create_user_request: CreateUserGoogle):
     user = db.query(User).filter(User.email == create_user_request.email).first()
     # In case user exists --
     if user:
-        print(1)
         return await login(user, db)
 
     # In case user doesn't exist --
@@ -88,7 +87,5 @@ async def google_auth(db: db_dependency, create_user_request: CreateUserGoogle):
     db.commit()
 
     new_created_user = db.query(User).filter(User.email == create_user_request.email).first()
-    # Login user
-    print(3)
-    
+    # Login user    
     return await login(new_created_user, db)
