@@ -5,7 +5,9 @@ import re
 
 from itsdangerous import URLSafeTimedSerializer
 
-from datetime import datetime
+from datetime import datetime, time
+
+from fastapi import Request
 import os
 
 from dotenv import load_dotenv
@@ -86,7 +88,11 @@ def is_secure_password(password):
 
 
 def create_url_safe_token(data: dict):
-
+    
     token = serializer.dumps(data)
 
     return token
+
+
+def get_redis(request: Request):
+    return request.app.state.redis

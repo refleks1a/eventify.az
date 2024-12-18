@@ -54,6 +54,8 @@ class Venue(Base):
     work_hours_open = Column(Time, default=time(10, 0))
     work_hours_close = Column(Time, default=time(18, 0))
 
+    events = relationship("Event", back_populates="venue") 
+
 
 class Event(Base):
     __tablename__ = "events"
@@ -83,6 +85,9 @@ class Event(Base):
 
     start = Column(Time)
     finish = Column(Time)
+
+    lat = Column(String(257), nullable=False)
+    lng = Column(String(257), nullable=False)
 
 
 class Comment:

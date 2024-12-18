@@ -2,9 +2,13 @@ from typing import Annotated
 
 import re
 
-from .utils import event_types, is_past_date, time_regex, link_regex
+from .utils import event_types, is_past_date, time_regex, link_regex, get_redis
 
 from fastapi import APIRouter, Depends, Response
+
+import ast
+
+from redis import Redis
 
 from sqlalchemy.sql.expression import text
 from sqlalchemy import or_
@@ -38,8 +42,10 @@ def get_db():
     finally:
         db.close() 
 
+
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
+redis_dependency = Annotated[Redis, Depends(get_redis)]
 
 
 # Events
@@ -92,28 +98,52 @@ async def create_event(event: EventCreate, db: db_dependency,
 
 
 @router.get("", status_code=status.HTTP_200_OK)
-async def get_all_events(db: db_dependency):
+async def get_all_events(db: db_dependency, redis: redis_dependency):
     
-    events = db.query(Event).order_by(text("num_likes")).all()
-    venues = db.query(Venue).all()
-
-    events_data = []
-
-    for event in events:
-        for venue in venues:
-            if venue.id == event.venue_id:
-                break
+    try:
+        cached_events = redis.get("events").decode('utf-8')[1: -1]
+        split_cached_events = re.split(r"(?<=\}),\s*(?=\{)", cached_events)
+        if cached_events:
+            split_cached_events = split_cached_events 
+            events = [ast.literal_eval(event) for event in split_cached_events]
+        else:
+            events = db.query(Event).order_by(text("num_likes")).all()
+            redis.set("events", str([{
+                "id": event.__dict__.get("id"),
+                "date": event.__dict__.get("date"),
+                "organizer_id": event.__dict__.get("organizer_id"),
+                "poster_image_link": event.__dict__.get("poster_image_link"),
+                "num_likes": event.__dict__.get("num_likes"),
+                "start": event.__dict__.get("start"),
+                "finish":event.__dict__.get("finish"),
+                "title": event.__dict__.get("title"),
+                "description": event.__dict__.get("description"),
+                "venue_id": event.__dict__.get("venue_id"),
+                "event_type": event.__dict__.get("event_type"),
+                "created_at": event.__dict__.get("created_at"),
+                "lat": event.__dict__.get("lat"),
+                "lng": event.__dict__.get("lng"),
+            } for event in events]))
+    except AttributeError:
+        events = db.query(Event).order_by(text("num_likes")).all()
+        redis.set("events", str([{
+                "id": event.__dict__.get("id"),
+                "date": event.__dict__.get("date").strftime("%Y-%m-%d %H:%M:%S"),
+                "organizer_id": event.__dict__.get("organizer_id"),
+                "poster_image_link": event.__dict__.get("poster_image_link"),
+                "num_likes": event.__dict__.get("num_likes"),
+                "start": event.__dict__.get("start").strftime("%H:%M:%S"),
+                "finish":event.__dict__.get("finish").strftime("%H:%M:%S"),
+                "title": event.__dict__.get("title"),
+                "description": event.__dict__.get("description"),
+                "venue_id": event.__dict__.get("venue_id"),
+                "event_type": event.__dict__.get("event_type"),
+                "created_at":event.__dict__.get("created_at").strftime("%Y-%m-%d %H:%M:%S"),
+                "lat": event.__dict__.get("lat"),
+                "lng": event.__dict__.get("lng"),
+            } for event in events]))
         
-        events_data.append({
-            "event": event,
-            "location": {
-                "lat": venue.lat,
-                "lng": venue.lng
-            }
-        })
-    
-
-    return events_data
+    return events
 
 @router.get("/favorites", status_code=status.HTTP_200_OK)
 async def get_favorite_events(db: db_dependency, current_user: user_dependency):
