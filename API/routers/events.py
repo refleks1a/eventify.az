@@ -3,7 +3,7 @@ from typing import Annotated
 import re
 import ast
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Response, File, UploadFile
 
 from redis import Redis
 
@@ -18,11 +18,12 @@ from database import sessionLocal
 from dotenv import load_dotenv
 
 from models import Event, EventComment, EventLike, Venue, User
-from schemas import (EventLikeCreate, EventCreate,
+from schemas import (EventLikeCreate, EventCreate, EventCustomCreate,
         EventCommentCreate, EventCommentDelete)
 
 from .auth import get_current_user
 from .utils import event_types, is_past_date, time_regex, link_regex, get_redis
+from aws.s3 import upload_image
 
 
 load_dotenv()
@@ -46,10 +47,12 @@ redis_dependency = Annotated[Redis, Depends(get_redis)]
 
 
 # Events
-
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_event(event: EventCreate, db: db_dependency,
-        current_user: user_dependency):
+async def create_event(
+        db: db_dependency,
+        current_user: user_dependency,
+        event: EventCreate,
+        ):
     
     # Check if user is organizer or not
     if not current_user["is_organizer"]:
@@ -78,12 +81,44 @@ async def create_event(event: EventCreate, db: db_dependency,
         return Response(status_code=status.HTTP_400_BAD_REQUEST, 
             content="Invalid start/finish time of event")
     
-    # Check poster_image_link validity
-    if not bool(re.match(link_regex, str(event.poster_image_link))):
-        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
-            content="Invalid link")
+    db_event = Event(**event.model_dump(), lat=venue.lat, lng=venue.lng, 
+        organizer_id=current_user["id"])
+    db.add(db_event)
+    db.commit() 
+    
+    return Response(status_code=status.HTTP_201_CREATED)
 
-    db_event = Event(**event.model_dump(), lat=venue.lat, lng=venue.lng, organizer_id=current_user["id"])
+
+@router.post("/custom", status_code=status.HTTP_201_CREATED)
+async def create_event_cutsom(
+        db: db_dependency,
+        current_user: user_dependency,
+        event: EventCustomCreate,
+        ):
+    
+    # Check if user is organizer or not
+    if not current_user["is_organizer"]:
+        return Response(status_code=status.HTTP_403_FORBIDDEN, 
+            content="Only organizers can create events")
+
+    # Check event_type validity
+    if event.event_type not in event_types:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Invalid event type")
+
+    # Check date validity
+    if is_past_date(str(event.date)[:19]):
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Event date cannot be in the past")
+
+    # Check star/finish time validity
+    if (event.start > event.finish) or (not bool(re.match(time_regex, str(event.start)[:8]))) or (
+        not bool(re.match(time_regex, str(event.finish)[:8]))):
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
+            content="Invalid start/finish time of event")
+
+    db_event = Event(**event.model_dump(),
+        organizer_id=current_user["id"])
     db.add(db_event)
     db.commit() 
     
@@ -98,7 +133,6 @@ async def get_all_events(db: db_dependency, redis: redis_dependency):
         if cached_events:
             split_cached_events = split_cached_events 
             events = [ast.literal_eval(event) for event in split_cached_events]
-            print(1)
         else:
             events = db.query(Event).order_by(text("num_likes")).all()
             redis.set("events", str([{

@@ -138,8 +138,6 @@ class EventLikeInfo(EventLikeBase):
 
 # Event: Base    
 class EventBase(BaseModel):
-    venue_id: int
-
     title: str
     description: str
     event_type: str
@@ -151,6 +149,7 @@ class EventBase(BaseModel):
 
 class EventCreate(EventBase):
     poster_image_link: str
+    venue_id: int
 
 class EventInfo(EventBase):
     id: int
@@ -161,6 +160,12 @@ class EventInfo(EventBase):
 
     created_at: time
     
+class EventCustomCreate(EventBase):
+    poster_image_link: str
+    
+    lat: str
+    lng: str
+
 # Chat rooms
 
 class ChatRoomBase(BaseModel):
