@@ -1,7 +1,10 @@
+from fastapi import APIRouter, File, UploadFile, Response
+
 import boto3
-from fastapi import APIRouter, File, UploadFile
 from botocore.exceptions import NoCredentialsError
+
 from starlette import status 
+
 from dotenv import load_dotenv
 import os
 from datetime import datetime 
@@ -26,21 +29,28 @@ s3_client = boto3.client(
     region_name=REGION_NAME,
 )
 
-
-def generate_presigned_url(bucket_name, object_key, expiration=3600):
-    return s3_client.generate_presigned_url(
-        'get_object',
-        Params={'Bucket': bucket_name, 'Key': object_key},
-        ExpiresIn=expiration
-    )
+ALLOWED_DESTINATIONS = ["events", "venues", "profiles"]
+ALLOWED_IMAGE_TYPES = ["image/png", "image/gif", "image/avif", "image/jpg", 
+    "image/jpeg", "image/jfif", "image/pjpeg", "image/pjp", "image/svg", "image/webp"]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def upload_image(dest: str, file: UploadFile = File(...)):
+async def upload_image(destination: str, file: UploadFile = File(...)):
+
+    if destination not in ALLOWED_DESTINATIONS:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Not valid destination")
+
     try:
+        if file.content_type not in ALLOWED_IMAGE_TYPES:
+            return Response(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content="Invalid file type. Only images are allowed."
+            )
+
         time = datetime.now()
         file_content = await file.read()
-        file_name = dest +  "/" + file.filename + str(time)
+        file_name = destination +  "/" + file.filename + str(time)
         s3_client.put_object(
             Bucket=BUCKET_NAME,
             Key=file_name,
