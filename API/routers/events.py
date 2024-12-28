@@ -21,7 +21,7 @@ from database import sessionLocal
 from dotenv import load_dotenv
 
 from models import Event, EventComment, EventLike, Venue, User
-from schemas import (EventLikeCreate, EventCreate,
+from schemas import (EventLikeCreate, EventCreate, EventCustomCreate,
         EventCommentCreate, EventCommentInfo, EventCommentDelete)
 
 from .auth import get_current_user
@@ -60,15 +60,11 @@ async def create_event(event: EventCreate, db: db_dependency,
             content="Only organizers can create events")
 
     # Check venue_id validity
-    if not db.query(Venue).filter(Venue.id == event.venue_id).all():
+    venue = db.query(Venue).filter(Venue.id == event.venue_id).first()
+    if not venue:
         return Response(status_code=status.HTTP_400_BAD_REQUEST, 
             content="Invalid venue id")
-    
-    # Check organizer_id validity
-    if not db.query(User).filter(User.id == event.organizer_id).all():
-        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
-            content="Invalid organizer id")
-    
+        
     # Check event_type validity
     if event.event_type not in event_types:
         return Response(status_code=status.HTTP_400_BAD_REQUEST,
@@ -86,11 +82,45 @@ async def create_event(event: EventCreate, db: db_dependency,
             content="Invalid start/finish time of event")
 
     # Check poster_image_link validity
-    if not bool(re.match(link_regex, str(event.poster_image_link))):
-        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
-            content="Invalid link")
+
+    db_event = Event(**event.model_dump(), lat=venue.lat, lng=venue.lng, 
+        organizer_id=current_user["id"])
+    db.add(db_event)
+    db.commit() 
     
-    db_event = Event(**event.model_dump())
+    return Response(status_code=status.HTTP_201_CREATED)
+
+
+@router.post("/custom", status_code=status.HTTP_201_CREATED)
+async def create_event_custom(
+        db: db_dependency,
+        current_user: user_dependency,
+        event: EventCustomCreate,
+        ):
+    
+    # Check if user is organizer or not
+    if not current_user["is_organizer"]:
+        return Response(status_code=status.HTTP_403_FORBIDDEN, 
+            content="Only organizers can create events")
+
+    # Check event_type validity
+    if event.event_type not in event_types:
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Invalid event type")
+
+    # Check date validity
+    if is_past_date(str(event.date)[:19]):
+        return Response(status_code=status.HTTP_400_BAD_REQUEST,
+            content="Event date cannot be in the past")
+
+    # Check star/finish time validity
+    if (event.start > event.finish) or (not bool(re.match(time_regex, str(event.start)[:8]))) or (
+        not bool(re.match(time_regex, str(event.finish)[:8]))):
+        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
+            content="Invalid start/finish time of event")
+
+    db_event = Event(**event.model_dump(),
+        organizer_id=current_user["id"])
     db.add(db_event)
     db.commit() 
     

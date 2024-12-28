@@ -138,9 +138,6 @@ class EventLikeInfo(EventLikeBase):
 
 # Event: Base    
 class EventBase(BaseModel):
-    venue_id: int
-    organizer_id: int
-
     title: str
     description: str
     event_type: str
@@ -148,13 +145,20 @@ class EventBase(BaseModel):
     date: datetime
     start: time
     finish: time
-    
 
 class EventCreate(EventBase):
+    venue_id: int
     poster_image_link: str
+
+class EventCustomCreate(EventBase):
+    poster_image_link: str
+    
+    lat: str
+    lng: str
 
 class EventInfo(EventBase):
     id: int
+    organizer_id: int
 
     num_likes: int
     comments: EventCommentInfo
