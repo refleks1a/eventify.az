@@ -27,7 +27,7 @@ class CreateUserRequest(BaseModel):
     is_organizer: int
 
 class CreateUserGoogle(BaseModel):
-    id: int
+    id: str
     email: EmailStr
     first_name: str
     last_name: str
