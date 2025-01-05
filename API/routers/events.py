@@ -98,11 +98,6 @@ async def create_event_custom(
         event: EventCustomCreate,
         ):
     
-    # Check if user is organizer or not
-    if not current_user["is_organizer"]:
-        return Response(status_code=status.HTTP_403_FORBIDDEN, 
-            content="Only organizers can create events")
-
     # Check event_type validity
     if event.event_type not in event_types:
         return Response(status_code=status.HTTP_400_BAD_REQUEST,
@@ -189,13 +184,26 @@ async def get_favorite_events(db: db_dependency, current_user: user_dependency):
             for venue in venues:
                 if venue.id == event.venue_id:
                     break
-            events.append({
-                "event": event,
-                "location": {
-                    "lat": venue.lat,
-                    "lng": venue.lng
-                }
-            })
+            events.append(event)
+
+    return events
+
+
+@router.get("/favorites-ids", status_code=status.HTTP_200_OK)
+async def get_favorite_events_ids(db: db_dependency, current_user: user_dependency):
+    
+    likes = db.query(EventLike).filter(EventLike.owner_id == current_user["id"]).all()
+    venues = db.query(Venue).all()
+    events = []
+
+    for like in likes:
+        event = db.query(Event).filter(Event.id == like.event).first()
+        # If event is not Null append it to events list
+        if event:
+            for venue in venues:
+                if venue.id == event.venue_id:
+                    break
+            events.append(event.id)
 
     return events
 

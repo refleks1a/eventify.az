@@ -190,7 +190,8 @@ async def get_current_user(token: Annotated[str, Depends (oauth2_bearer)],
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "is_organizer": user.is_organizer,
-                "is_admin": user.is_admin
+                "is_admin": user.is_admin,
+                "is_verified": user.is_verified,
                 }
     
     except JWTError:
@@ -374,3 +375,13 @@ async def user_data(user: Annotated[get_current_user, Depends()]):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
     return user   
+
+
+@router.get("/verification-status", status_code=status.HTTP_200_OK)
+def get_verification_status(email: str, db: db_dependency):
+
+    user = db.query(User).filter(User.email == email).first()
+    if user.is_verified:
+        return True
+
+    return False

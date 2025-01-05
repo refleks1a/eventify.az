@@ -45,7 +45,6 @@ async def login(user: user_dependency, db: db_dependency):
         
         token = create_access_token(user.username, user.id, timedelta(minutes=20))
         refresh_token = create_refresh_token(user.username, user.id)
-
         return {"access_token": token, "refresh_token": refresh_token, "token_type": "bearer"}
     return {"response": "Invalid provider", "status": status.HTTP_403_FORBIDDEN}
 
