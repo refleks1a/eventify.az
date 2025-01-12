@@ -229,7 +229,7 @@ async def get_event(event_id: int, db: db_dependency):
 # Likes
 
 @router.post("/like", status_code=status.HTTP_201_CREATED)
-async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
+async def event_like(event_like: EventLikeCreate, db: db_dependency,
         current_user: user_dependency):
     
     # Check event id validity
@@ -238,13 +238,21 @@ async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
         return Response(status_code=status.HTTP_400_BAD_REQUEST, 
             content="Invalid event id")
 
-    # Check whether like exists or not
-    check_db_event_like = db.query(EventLike).filter(EventLike.event == event_like.event,
+    # If Event like exists 
+    check_db_event_like = db.query(EventLike).filter(
+        EventLike.event == event_like.event,
         EventLike.owner_id == current_user["id"]).first()
     if check_db_event_like:
-        return Response(status_code=status.HTTP_400_BAD_REQUEST,
-            content="Like already exists")
+        db.delete(check_db_event_like)
+        event.num_likes -= 1 
+        
+        if event.num_likes < 0:
+            event.num_likes = 0
+        
+        db.commit() 
+        return Response(status_code=status.HTTP_204_NO_CONTENT) 
     
+    # Create Event like
     db_event_like = EventLike(**event_like.model_dump(), owner_id=current_user["id"])
 
     db.add(db_event_like)
@@ -253,34 +261,6 @@ async def create_event_like(event_like: EventLikeCreate, db: db_dependency,
     db.refresh(db_event_like)
 
     return Response(status_code=status.HTTP_201_CREATED) 
-    
-
-@router.delete("/like", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_event_like(event_like: EventLikeCreate, db: db_dependency,
-        current_user: user_dependency):
-    
-    # Check event id validity
-    event = db.query(Event).filter(Event.id == event_like.event).first()
-    if not event:
-        return Response(status_code=status.HTTP_400_BAD_REQUEST, 
-            content="Invalid event id")
-
-    # Check whether like exists or not
-    check_db_event_like = db.query(EventLike).filter(EventLike.event == event_like.event,
-        EventLike.owner_id == current_user["id"])
-    if not check_db_event_like:
-        return Response(status_code=status.HTTP_400_BAD_REQUEST,
-            content="Like doesn't exist")
-    
-    check_db_event_like.delete(synchronize_session=False)
-    event.num_likes -= 1 
-
-    if event.num_likes < 0:
-        event.num_likes = 0
-
-    db.commit()
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # Comments
