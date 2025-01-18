@@ -287,8 +287,25 @@ def create_event_comment(event_comment: EventCommentCreate, db: db_dependency,
 def get_event_comments(event_id: int, db: db_dependency):
 
     comments = db.query(EventComment).filter(EventComment.event == event_id).order_by(text("-created_at")).all()
+    
+    data = []
 
-    return comments
+    for comment in comments:
+        owner = db.query(User).filter(User.id == comment.owner_id).first()
+        data.append(
+            {
+                "comment": comment,
+                "owner": {
+                    "id": owner.id,
+                    "email": owner.email,
+                    "username": owner.username,
+                    "last_name": owner.last_name,
+                    "first_name": owner.first_name,
+                },
+            }
+        )
+
+    return data
 
 
 @router.get("/comment/{comment_id}", status_code=status.HTTP_200_OK)
@@ -299,8 +316,18 @@ def get_comment(comment_id: int, db: db_dependency):
     if not comment:
         return Response(status_code=status.HTTP_404_NOT_FOUND,
                 content=f"Comment with id: {comment_id} was not found")
+    owner = db.query(User).filter(User.id == comment.owner_id).first()
 
-    return comment
+    return {
+        "comment": comment,
+        "owner": {
+            "id": owner.id,
+            "email": owner.email,
+            "username": owner.username,
+            "last_name": owner.last_name,
+            "first_name": owner.first_name,
+        },
+    }
 
 
 @router.delete("/comment", status_code=status.HTTP_204_NO_CONTENT)

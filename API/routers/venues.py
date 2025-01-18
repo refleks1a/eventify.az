@@ -14,7 +14,7 @@ from database import sessionLocal
 
 from dotenv import load_dotenv
 
-from models import Venue, VenueComment, VenueLike
+from models import Venue, VenueComment, VenueLike, User
 from schemas import (VenueLikeCreate, VenueCreate, VenueCommentDelete,
         VenueCommentCreate, VenueCommentInfo, VenueCommentBase)
 
@@ -156,7 +156,24 @@ def get_venue_comments(venue_id: int, db: db_dependency):
 
     comments = db.query(VenueComment).filter(VenueComment.venue == venue_id).order_by(text("-created_at")).all()
 
-    return comments
+    data = []
+
+    for comment in comments:
+        owner = db.query(User).filter(User.id == comment.owner_id).first()
+        data.append(
+            {
+                "comment": comment,
+                "owner": {
+                    "id": owner.id,
+                    "email": owner.email,
+                    "username": owner.username,
+                    "last_name": owner.last_name,
+                    "first_name": owner.first_name,
+                },
+            }
+        )
+
+    return data
 
 
 @router.get("/comment/{comment_id}", status_code=status.HTTP_200_OK)
@@ -168,7 +185,18 @@ def get_comment(comment_id: int, db: db_dependency):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Comment with id: {comment_id} was not found")
 
-    return comment
+    owner = db.query(User).filter(User.id == comment.owner_id).first()
+
+    return {
+        "comment": comment,
+        "owner": {
+            "id": owner.id,
+            "email": owner.email,
+            "username": owner.username,
+            "last_name": owner.last_name,
+            "first_name": owner.first_name,
+        },
+    }
 
 
 @router.delete("/comment", status_code=status.HTTP_204_NO_CONTENT)
