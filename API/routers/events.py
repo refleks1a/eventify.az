@@ -339,11 +339,11 @@ async def search_events(query: str, db: db_dependency):
                 break
         
         events_data.append({
-            "event": event,
-            "location": {
-                "lat": venue.lat,
-                "lng": venue.lng
-            }
+            "event": event
+            # "location": {
+            #     "lat": venue.lat,
+            #     "lng": venue.lng
+            # }
         })
     
 
