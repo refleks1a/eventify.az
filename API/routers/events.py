@@ -320,31 +320,68 @@ async def delete_event_comment(event_comment: EventCommentDelete, db: db_depende
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-# Search events
 
 @router.get("/search/{query}", status_code=status.HTTP_200_OK)
 async def search_events(query: str, db: db_dependency):
-
-    events = db.query(Event).filter(or_(
+    # Use a join to fetch events and venues in one query
+    events_with_venues = (
+        db.query(Event, Venue)
+        .join(Venue, Venue.id == Event.venue_id)
+        .filter(or_(
             Event.title.ilike(f"%{query[:127]}%"),
             Event.description.ilike(f"%{query[:127]}%"))
-        ).limit(10).all()
-    venues = db.query(Venue).all()
+        )
+        .limit(10)
+        .all()
+    )
 
-    events_data = []
-
-    for event in events:
-        for venue in venues:
-            if venue.id == event.venue_id:
-                break
-        
-        events_data.append({
-            "event": event
-            # "location": {
-            #     "lat": venue.lat,
-            #     "lng": venue.lng
-            # }
-        })
-    
+    # Prepare the response data
+    events_data = [
+        {
+            "id": event.id,
+            "date": event.date,
+            "organizer_id": event.organizer_id,
+            "poster_image_link": event.poster_image_link,
+            "num_likes": event.num_likes,
+            "start": event.start,
+            "finish": event.finish,
+            "title": event.title,
+            "description": event.description,
+            "venue_id": event.venue_id,
+            "event_type": event.event_type,
+            "created_at": event.created_at,
+            "lat": venue.lat,
+            "lng": venue.lng
+        }
+        for event, venue in events_with_venues
+    ]
 
     return events_data
+
+# # Search events
+# @router.get("/search/{query}", status_code=status.HTTP_200_OK)
+# async def search_events(query: str, db: db_dependency):
+
+#     events = db.query(Event).filter(or_(
+#             Event.title.ilike(f"%{query[:127]}%"),
+#             Event.description.ilike(f"%{query[:127]}%"))
+#         ).limit(10).all()
+#     venues = db.query(Venue).all()
+
+#     events_data = []
+
+#     for event in events:
+#         for venue in venues:
+#             if venue.id == event.venue_id:
+#                 break
+        
+#         events_data.append({
+#             "event": event,
+#             "location": {
+#                 "lat": venue.lat,
+#                 "lng": venue.lng
+#             }
+#         })
+    
+
+#     return events_data
