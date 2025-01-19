@@ -220,9 +220,12 @@ async def delete_venue_comment(venue_comment: VenueCommentDelete, db: db_depende
 @router.get("/search/{query}", status_code=status.HTTP_200_OK)
 async def search_venues(query: str, db: db_dependency):
 
-    venues = db.query(Venue).filter(or_(
-            Venue.name.ilike(f"%{query[:127]}%"),
-            Venue.description.ilike(f"%{query[:127]}%"))
-        ).limit(10).all()
+    # venues = db.query(Venue).filter(or_(
+    #         Venue.name.ilike(f"%{query[:127]}%"),
+    #         Venue.description.ilike(f"%{query[:127]}%"))
+    #     ).limit(10).all()
+    
+
+    venues = db.query(Venue).filter(Venue.name.ilike(f"%{query[:127]}%")).limit(10).all()
     
     return venues
