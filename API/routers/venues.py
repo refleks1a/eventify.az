@@ -43,7 +43,6 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 
 
 # Venues
-
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_venue(venue: VenueCreate, db: db_dependency, 
         current_user: user_dependency):
@@ -76,10 +75,9 @@ async def create_venue(venue: VenueCreate, db: db_dependency,
 
 
 @router.get("", status_code=status.HTTP_200_OK)
-async def get_all_venues(db: db_dependency):
+async def get_all_venues(db: db_dependency): # type: ignore
     
-    venues = db.query(Venue).order_by(text("num_likes")).all()
-    
+    venues = db.query(Venue).order_by(text("num_likes")).all()    
     return venues
 
 
@@ -152,7 +150,7 @@ def create_venue_comment(venue_comment: VenueCommentCreate, db: db_dependency,
 
 
 @router.get("/{venue_id}/comment", status_code=status.HTTP_200_OK)
-def get_venue_comments(venue_id: int, db: db_dependency):
+def get_venue_comments(venue_id: int, db: db_dependency, current_user: user_dependency):
 
     comments = db.query(VenueComment).filter(VenueComment.venue == venue_id).order_by(text("-created_at")).all()
 
@@ -173,7 +171,10 @@ def get_venue_comments(venue_id: int, db: db_dependency):
             }
         )
 
-    return data
+    # Sort the data by owner.id, putting the current user's comments first
+    sorted_data = sorted(data, key=lambda x: x['owner']['id'] != current_user["id"])
+
+    return sorted_data
 
 
 @router.get("/comment/{comment_id}", status_code=status.HTTP_200_OK)
