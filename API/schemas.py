@@ -146,6 +146,9 @@ class EventBase(BaseModel):
     start: time
     finish: time
 
+    goto: str
+
+    
 class EventCreate(EventBase):
     venue_id: int
     poster_image_link: str

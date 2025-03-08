@@ -89,6 +89,9 @@ class Event(Base):
     lat = Column(String(257), nullable=False)
     lng = Column(String(257), nullable=False)
 
+    goto = Column(String(511), nullable = False)
+    
+
 
 class Comment:
     @declared_attr
