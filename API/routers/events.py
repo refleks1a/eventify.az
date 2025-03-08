@@ -167,7 +167,7 @@ async def get_all_events(db: db_dependency, redis: redis_dependency):
                 "created_at":event.__dict__.get("created_at").strftime("%Y-%m-%d %H:%M:%S"),
                 "lat": event.__dict__.get("lat"),
                 "lng": event.__dict__.get("lng"),
-                "goto": event.__dir__.get("goto")
+                "goto": event.__dict__.get("goto")
             } for event in events]))
         
     return events
