@@ -24,7 +24,7 @@ time_regex = r"^(?:[01]?[0-9]|2[0-3]):[0-5]?[0-9](?::[0-5]?[0-9])?$"
 link_regex = r"^https:\/\/(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(\/[^\s]*)?$"
 
 event_types = ["theatre", "concert", "exhibition", "book_fare",
-        "seminar","festival","dance"]
+        "seminar","festival","dance", "comedy", "film"]
 
 venue_types = ["museum", "theatre", "library", "cinema",
         "comedy_club","monument","cultural_space"]
