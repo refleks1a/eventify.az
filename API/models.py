@@ -81,7 +81,7 @@ class Event(Base):
     organizer = relationship("User")
 
     event_type = Column(Enum("theatre", "concert", "exhibition", "book_fare",
-        "seminar","festival","dance", name="venue_type" ))
+        "seminar","festival","dance", "comedy", "cinema", name="venue_type" ))
 
     poster_image_link = Column(String(511), nullable=True)
     
